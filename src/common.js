@@ -404,7 +404,20 @@ async function loadSettings() {
     syncData.blockedCountries,
   );
 
+  // The user's own sign-in names (logon name, e-mail address), provided per
+  // user by the organization. Typing one of them on a non-whitelisted page
+  // triggers a warning. Compared locally, never sent anywhere.
+  const protectedLogins = [
+    ...new Set(
+      (Array.isArray(policy.protectedLogins) ? policy.protectedLogins : [])
+        .filter((login) => typeof login === "string")
+        .map((login) => login.trim().toLowerCase())
+        .filter((login) => login.length >= 3),
+    ),
+  ];
+
   return {
+    protectedLogins,
     // Optional text from the organization, shown on the confirmation page
     noticeText:
       typeof policy.noticeText === "string"

@@ -400,6 +400,13 @@ function main() {
         `  HKLM\\${browser.policyRoot}\\3rdparty\\extensions\\${extensionId}\\policy`,
     ),
     "",
+    "Key paths for the per-user sign-in names (Group Policy Preferences,",
+    "hive HKEY_CURRENT_USER, see the guide):",
+    ...BROWSERS.map(
+      (browser) =>
+        `  ${browser.policyRoot}\\3rdparty\\extensions\\${extensionId}\\policy\\protectedLogins`,
+    ),
+    "",
   ].join("\r\n");
   fs.writeFileSync(path.join(OUT_DIR, "gpo-values.txt"), values);
 

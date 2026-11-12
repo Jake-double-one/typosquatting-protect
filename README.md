@@ -12,6 +12,7 @@ A browser extension that protects against typosquatting and phishing by showing 
 - **Import/Export Functionality**: Easily backup and transfer your whitelist between devices
 - **Simple Management**: Add the current domain to your whitelist with a single click
 - **Lookalike Detection**: Warns about domains that imitate whitelisted ones with characters from other alphabets (homograph attacks) or with typos and tricks such as `sharepoimt.com`, `rnicrosoft.com` or `sharepoint.com.evil.net`
+- **Sign-in Name Guard**: Marks the field red and warns when users type their company logon name or e-mail address on a non-whitelisted page
 - **English and German**: The interface follows the browser language
 - **Organization Whitelist**: Administrators can roll out a central whitelist and lock settings via Group Policy
 
@@ -83,6 +84,7 @@ Available policies (see `src/managed_schema.json`):
 | `enableCountryBlock`     | boolean         | Forces country checks on or off                           |
 | `noticeText`             | string          | Note shown to users on the confirmation page              |
 | `geoProvider`            | string          | Lookup service: `ipwhois`, `geojs` or `ipapi`             |
+| `protectedLogins`        | list of strings | The user's own sign-in names; typing one on a non-whitelisted page shows a warning (set per user) |
 | `blockedCountries`       | list of strings | ISO country codes that are always blocked                 |
 
 ## 🔒 Privacy

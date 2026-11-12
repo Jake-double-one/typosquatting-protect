@@ -132,6 +132,54 @@ beide Browser nutzt, trage die Liste in beiden Ordnern ein.
 
 Nicht konfigurierte Einstellungen bleiben in der Hand der Benutzer.
 
+## Warnung bei Eingabe der Firmen-Anmeldung
+
+Die Erweiterung kann warnen, sobald jemand seinen Anmeldenamen oder seine
+E-Mail-Adresse in ein Feld auf einer nicht freigegebenen Seite eingibt: Das
+Feld und die Passwortfelder der Seite werden rot markiert, und ein Hinweis
+erscheint direkt am Feld. Der Vergleich findet nur im Browser statt.
+
+Dafür muss die Erweiterung die Kennungen des jeweiligen Benutzers kennen. Der
+Browser kann sie nicht selbst auslesen; die GPO schreibt sie pro Benutzer in
+die Richtlinie der Erweiterung. Das geht über die
+Gruppenrichtlinien-Einstellungen, weil nur dort Variablen wie `%LogonUser%`
+aufgelöst werden.
+
+In der GPO unter *Benutzerkonfiguration → Einstellungen → Windows-Einstellungen
+→ Registrierung* pro Kennung ein Registrierungselement anlegen
+(*Neu → Registrierungselement*):
+
+| Feld | Wert |
+| --- | --- |
+| Aktion | Aktualisieren |
+| Struktur | `HKEY_CURRENT_USER` |
+| Schlüsselpfad | der Pfad aus `gpo-values.txt`, er endet auf `\policy\protectedLogins` |
+| Name | `1` (für weitere Kennungen `2`, `3`, …) |
+| Werttyp | `REG_SZ` |
+| Wertdaten | die Kennung, siehe unten |
+
+Übliche Wertdaten:
+
+| Kennung | Wertdaten |
+| --- | --- |
+| Anmeldename | `%LogonUser%` |
+| Anmeldename mit Domäne | `%LogonDomain%\%LogonUser%` |
+| E-Mail-Adresse, wenn sie dem Anmeldenamen entspricht | `%LogonUser%@example.com` |
+
+Für Chrome und Edge je eigene Elemente mit dem jeweiligen Schlüsselpfad
+anlegen.
+
+Weicht die E-Mail-Adresse vom Anmeldenamen ab (etwa
+`vorname.nachname@example.com`), gibt es dafür keine fertige Variable. Dann
+muss ein Anmeldeskript die Adresse aus dem Active Directory lesen und in
+denselben Schlüssel schreiben. Da normale Benutzer unter
+`HKCU\Software\Policies` nicht schreiben dürfen, muss das Skript mit
+erhöhten Rechten laufen, zum Beispiel als geplante Aufgabe über die GPO.
+
+Groß- und Kleinschreibung spielt beim Vergleich keine Rolle. Unter
+`chrome://policy` bzw. `edge://policy` siehst du, ob `protectedLogins` beim
+Benutzer ankommt.
+
 ## Im Alltag
 
 ### Domain hinzufügen oder entfernen

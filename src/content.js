@@ -86,6 +86,127 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Sign-in name guard: warns when the user types their company logon name or
+// e-mail address into a field on a non-whitelisted page.
+// ---------------------------------------------------------------------------
+let protectedLogins = [];
+let loginWarning = null;
+let loginWarningField = null;
+const markedFields = new Set();
+
+function isTextField(element) {
+  if (!(element instanceof HTMLInputElement)) {
+    return element instanceof HTMLTextAreaElement;
+  }
+  return ["text", "email", "search", "tel", "url", ""].includes(
+    (element.getAttribute("type") || "").toLowerCase(),
+  );
+}
+
+function markField(field) {
+  if (markedFields.has(field)) return;
+  markedFields.add(field);
+  field.style.setProperty("outline", "3px solid #d50000", "important");
+  field.style.setProperty("outline-offset", "1px", "important");
+  field.style.setProperty("background-color", "#ffebee", "important");
+  field.style.setProperty("color", "#000", "important");
+}
+
+function unmarkField(field) {
+  if (!markedFields.delete(field)) return;
+  for (const property of ["outline", "outline-offset", "background-color", "color"]) {
+    field.style.removeProperty(property);
+  }
+}
+
+function positionLoginWarning() {
+  if (!loginWarning || !loginWarningField) return;
+  if (!loginWarningField.isConnected) {
+    hideLoginWarning();
+    return;
+  }
+  const rect = loginWarningField.getBoundingClientRect();
+  const width = Math.min(360, window.innerWidth - 16);
+  loginWarning.style.setProperty("width", `${width}px`, "important");
+
+  // Prefer a spot beside or above the field so the fields below stay visible
+  const height = loginWarning.offsetHeight;
+  let left;
+  let top;
+  if (rect.right + 10 + width <= window.innerWidth - 8) {
+    left = rect.right + 10;
+    top = rect.top;
+  } else {
+    left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+    top = rect.top - height - 6 >= 0 ? rect.top - height - 6 : rect.bottom + 6;
+  }
+  loginWarning.style.setProperty("left", `${left + window.scrollX}px`, "important");
+  loginWarning.style.setProperty("top", `${top + window.scrollY}px`, "important");
+}
+
+function showLoginWarning(field) {
+  if (!loginWarning) {
+    loginWarning = document.createElement("div");
+    loginWarning.id = "whitelist-login-warning";
+    loginWarning.setAttribute("role", "alert");
+    const title = document.createElement("strong");
+    title.textContent = t("loginWarningTitle");
+    const text = document.createElement("span");
+    text.textContent = t("loginWarningText", [getDomain(window.location.href)]);
+    loginWarning.append(title, text);
+  }
+  loginWarningField = field;
+  if (!loginWarning.isConnected) document.documentElement.appendChild(loginWarning);
+  positionLoginWarning();
+}
+
+function hideLoginWarning() {
+  if (loginWarning) loginWarning.remove();
+  loginWarningField = null;
+}
+
+function clearLoginGuard() {
+  [...markedFields].forEach(unmarkField);
+  hideLoginWarning();
+}
+
+function checkField(field) {
+  if (!protectedLogins.length || !isTextField(field)) return;
+  const value = (field.value || "").trim().toLowerCase();
+
+  if (value && protectedLogins.includes(value)) {
+    markField(field);
+    showLoginWarning(field);
+    // The password usually follows: mark those fields as well
+    document.querySelectorAll('input[type="password"]').forEach(markField);
+  } else if (markedFields.has(field)) {
+    unmarkField(field);
+    if (loginWarningField === field) {
+      hideLoginWarning();
+      document.querySelectorAll('input[type="password"]').forEach(unmarkField);
+    }
+  }
+}
+
+function onFieldEvent(event) {
+  // composedPath reaches fields inside open shadow roots
+  const field = event.composedPath ? event.composedPath()[0] : event.target;
+  if (field && field.nodeType === Node.ELEMENT_NODE) checkField(field);
+}
+
+// Fields that were filled in by the browser or a password manager
+function scanFields() {
+  if (!protectedLogins.length) return;
+  document.querySelectorAll("input, textarea").forEach(checkField);
+}
+
+document.addEventListener("input", onFieldEvent, true);
+document.addEventListener("change", onFieldEvent, true);
+document.addEventListener("focusin", onFieldEvent, true);
+window.addEventListener("scroll", positionLoginWarning, true);
+window.addEventListener("resize", positionLoginWarning);
+
 async function checkDomain() {
   if (!isHttpUrl(window.location.href)) return;
   const currentDomain = getDomain(window.location.href);
@@ -93,7 +214,12 @@ async function checkDomain() {
 
   if (isWhitelisted(currentDomain, settings.whitelist)) {
     removeWarningBar();
+    protectedLogins = [];
+    clearLoginGuard();
   } else {
+    protectedLogins = settings.protectedLogins;
+    scanFields();
+    setTimeout(scanFields, 1500);
     createWarningBar(
       currentDomain,
       settings.allowUserWhitelist,

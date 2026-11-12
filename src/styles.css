@@ -76,3 +76,33 @@
 #whitelist-warning-bar #wildcard-whitelist-btn:hover {
   background-color: #2a75f3 !important;
 }
+
+#whitelist-login-warning {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  box-sizing: border-box !important;
+  background-color: #d50000 !important;
+  color: white !important;
+  border: 2px solid #7f0000 !important;
+  border-radius: 6px !important;
+  padding: 10px 12px !important;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  text-align: left !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+#whitelist-login-warning strong {
+  display: block !important;
+  color: white !important;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  margin-bottom: 3px !important;
+}
+
+#whitelist-login-warning span {
+  color: white !important;
+}

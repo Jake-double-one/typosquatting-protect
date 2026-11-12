@@ -46,6 +46,14 @@
         "geojs",
         "ipapi"
       ]
+    },
+    "protectedLogins": {
+      "title": "The user's sign-in names",
+      "description": "Logon name and e-mail address of the current user, set per user. Typing one of them on a non-whitelisted page shows a warning at the field.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   }
 }
