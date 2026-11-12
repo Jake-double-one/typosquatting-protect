@@ -2,6 +2,36 @@
 // extension pages (popup, confirmation page).
 const browserAPI = globalThis.browser ?? globalThis.chrome;
 
+// Translated text for the browser's UI language (see _locales).
+function t(key, substitutions) {
+  return browserAPI.i18n.getMessage(key, substitutions) || key;
+}
+
+// Fills in elements marked with data-i18n (text) or data-i18n-placeholder.
+function localizePage() {
+  document.documentElement.lang = browserAPI.i18n.getUILanguage();
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.placeholder = t(element.dataset.i18nPlaceholder);
+  });
+}
+
+// Country name in the browser's language, e.g. "Deutschland" for "DE".
+function countryDisplayName(code, fallback) {
+  try {
+    const names = new Intl.DisplayNames([browserAPI.i18n.getUILanguage()], {
+      type: "region",
+    });
+    const name = names.of(String(code).toUpperCase());
+    if (name && name !== code) return name;
+  } catch (e) {
+    // Unknown code or unsupported API
+  }
+  return fallback || code;
+}
+
 // storage.sync limits a single item to 8 KB, so the user whitelist is spread
 // over "whitelist", "whitelist_1", "whitelist_2", ...
 const WHITELIST_CHUNK_BYTES = 6000;

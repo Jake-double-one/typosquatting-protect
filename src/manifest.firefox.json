@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "Domain Whitelist Protector",
   "version": "3.0",
-  "description": "Protects against typosquatting and phishing with Geolocation checks by showing warnings for non-whitelisted domains",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "permissions": ["storage", "tabs", "webNavigation"],
   "host_permissions": ["<all_urls>"],
   "action": {

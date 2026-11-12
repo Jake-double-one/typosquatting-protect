@@ -146,7 +146,7 @@ Neustart des Browsers ist nicht nötig.
 
 `chrome://policy` bzw. `edge://policy` öffnen. Die Einstellungen stehen dort
 unter dem Namen der Erweiterung. Im Popup der Erweiterung erscheinen die
-Firmen-Domains unter „Managed by your organization“.
+Firmen-Domains unter „Von Ihrer Organisation verwaltet“.
 
 ### Neue Version der Erweiterung verteilen
 

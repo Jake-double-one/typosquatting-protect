@@ -1,0 +1,200 @@
+{
+  "extDescription": {
+    "message": "Schützt vor Typosquatting und Phishing: warnt bei Domains, die nicht auf der Whitelist stehen, und prüft das Herkunftsland"
+  },
+  "barBefore": {
+    "message": "⚠️ Domain nicht auf der Whitelist: "
+  },
+  "barAfter": {
+    "message": " könnte unsicher sein"
+  },
+  "barWhitelist": {
+    "message": "Domain freigeben"
+  },
+  "barWhitelistWildcard": {
+    "message": "$1 freigeben"
+  },
+  "barClose": {
+    "message": "Schließen"
+  },
+  "confirmPageTitle": {
+    "message": "Domain-Sicherheitsprüfung"
+  },
+  "confirmHeading": {
+    "message": "Domain nicht auf der Whitelist"
+  },
+  "confirmIntro": {
+    "message": "Sie sind dabei, eine Domain zu öffnen, die nicht auf Ihrer Whitelist steht:"
+  },
+  "confirmHint": {
+    "message": "Es könnte sich um Typosquatting oder einen Phishing-Versuch handeln."
+  },
+  "confirmWhitelist": {
+    "message": "Freigeben und fortfahren"
+  },
+  "confirmWildcard": {
+    "message": "$1 freigeben und fortfahren"
+  },
+  "confirmContinue": {
+    "message": "Ohne Freigabe fortfahren"
+  },
+  "confirmExit": {
+    "message": "Seite nicht laden"
+  },
+  "confirmManaged": {
+    "message": "Die Whitelist wird von Ihrer Organisation verwaltet."
+  },
+  "geoDisabled": {
+    "message": "Länderprüfung deaktiviert"
+  },
+  "geoFailed": {
+    "message": "Länderabfrage fehlgeschlagen"
+  },
+  "geoBlockedTitle": {
+    "message": "Blockiertes Land"
+  },
+  "geoRiskHeading": {
+    "message": "Warnung: geografisches Risiko"
+  },
+  "geoRiskText": {
+    "message": "Diese Domain stammt aus einem blockierten Land."
+  },
+  "geoHeading": {
+    "message": "Standort:"
+  },
+  "geoCountry": {
+    "message": "Land"
+  },
+  "geoRegion": {
+    "message": "Region"
+  },
+  "geoIp": {
+    "message": "IP"
+  },
+  "geoIsp": {
+    "message": "Anbieter"
+  },
+  "geoRisk": {
+    "message": "Risikostufe"
+  },
+  "geoRiskHigh": {
+    "message": "Hoch"
+  },
+  "geoRiskLow": {
+    "message": "Niedrig"
+  },
+  "unknown": {
+    "message": "Unbekannt"
+  },
+  "tabDomains": {
+    "message": "Domains"
+  },
+  "tabCountry": {
+    "message": "Länder"
+  },
+  "tabImportExport": {
+    "message": "Import/Export"
+  },
+  "tabAbout": {
+    "message": "Info"
+  },
+  "preemptiveTitle": {
+    "message": "Vorabprüfung von Domains"
+  },
+  "preemptiveText": {
+    "message": "Domains prüfen, bevor Seiten geladen werden"
+  },
+  "managedByOrg": {
+    "message": "Von Ihrer Organisation verwaltet"
+  },
+  "managedHeading": {
+    "message": "Von Ihrer Organisation verwaltet:"
+  },
+  "userLocked": {
+    "message": "Ihre Organisation erlaubt keine eigenen Domains."
+  },
+  "domainPlaceholder": {
+    "message": "z. B. example.com, *.example.com"
+  },
+  "add": {
+    "message": "Hinzufügen"
+  },
+  "addCurrent": {
+    "message": "Aktuelle Domain hinzufügen"
+  },
+  "userHeading": {
+    "message": "Eigene Domains:"
+  },
+  "emptyWhitelist": {
+    "message": "Keine Domains auf der Whitelist"
+  },
+  "remove": {
+    "message": "Entfernen"
+  },
+  "badgeWildcard": {
+    "message": "WILDCARD"
+  },
+  "badgeManaged": {
+    "message": "VERWALTET"
+  },
+  "alertInvalidDomain": {
+    "message": "Das ist keine gültige Domain."
+  },
+  "alertAlreadyListed": {
+    "message": "Diese Domain steht bereits auf Ihrer Whitelist."
+  },
+  "alertNotWebPage": {
+    "message": "Der aktuelle Tab ist keine Webseite."
+  },
+  "countryHeading": {
+    "message": "Länder blockieren"
+  },
+  "countryWarning": {
+    "message": "⚠️ Diese Erweiterung fragt die Standortdaten für Domains, die nicht auf der Whitelist stehen, derzeit über eine unverschlüsselte HTTP-Anfrage bei ip-api.com ab. Das birgt Risiken für Sicherheit und Datenschutz:"
+  },
+  "countryWarningNetwork": {
+    "message": "Wer den Netzwerkverkehr mitliest, kann die aufgerufenen Domains sehen"
+  },
+  "countryWarningProvider": {
+    "message": "Der Anbieter ip-api.com könnte Anfragen anhand der IP-Adresse nachverfolgen"
+  },
+  "countryWarningNote": {
+    "message": "Hinweis: Es besteht keine Verbindung oder Vereinbarung mit ip-api.com."
+  },
+  "countryToggleTitle": {
+    "message": "Länderprüfung"
+  },
+  "countryToggleText": {
+    "message": "Ausschalten beendet die Anfragen an ip-api.com"
+  },
+  "countrySelect": {
+    "message": "Land zum Blockieren wählen"
+  },
+  "countryBlock": {
+    "message": "Land blockieren"
+  },
+  "emptyCountries": {
+    "message": "Keine Länder blockiert"
+  },
+  "exportData": {
+    "message": "Daten exportieren"
+  },
+  "importData": {
+    "message": "Daten importieren"
+  },
+  "alertImportFormat": {
+    "message": "Ungültiges Format. Die Datei muss ein JSON-Objekt mit den Listen 'whitelist' und 'countryBlock' enthalten."
+  },
+  "alertImportDone": {
+    "message": "$1 Domains und $2 blockierte Länder wurden importiert."
+  },
+  "alertImportError": {
+    "message": "Fehler beim Lesen der Datei: $1"
+  },
+  "aboutText": {
+    "message": "Eine Browser-Erweiterung, die Sie beim Surfen schützt: Sie geben vertrauenswürdige Domains frei und werden vor allen anderen gewarnt."
+  },
+  "aboutGithub": {
+    "message": "Auf GitHub ansehen"
+  }
+}

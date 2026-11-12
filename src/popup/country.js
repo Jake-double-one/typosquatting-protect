@@ -5,14 +5,19 @@ function loadCountries() {
   fetch("countries.json")
     .then((response) => response.json())
     .then((data) => {
-      // Sort countries alphabetically by name
-      const sortedCountries = data.sort((a, b) => a.name.localeCompare(b.name));
+      // Sort countries alphabetically by their localized name
+      const sortedCountries = data
+        .map((country) => ({
+          country,
+          label: countryDisplayName(country.code, country.name),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
       // Populate dropdown with sorted countries
-      sortedCountries.forEach((country) => {
+      sortedCountries.forEach(({ country, label }) => {
         const option = document.createElement("option");
         option.value = JSON.stringify(country);
-        option.textContent = country.name;
+        option.textContent = label;
         countrySelect.appendChild(option);
       });
     })
@@ -75,7 +80,7 @@ async function getCountryName(code) {
       // Fall back to showing the country code
     }
   }
-  return countryNames[code] || code;
+  return countryDisplayName(code, countryNames[code]);
 }
 
 function appendCountry(listElement, name, onRemove) {
@@ -88,14 +93,14 @@ function appendCountry(listElement, name, onRemove) {
 
   if (onRemove) {
     const removeButton = document.createElement("button");
-    removeButton.textContent = "Remove";
+    removeButton.textContent = t("remove");
     removeButton.className = "remove-btn";
     removeButton.addEventListener("click", onRemove);
     li.appendChild(removeButton);
   } else {
     const badge = document.createElement("span");
     badge.className = "managed-badge";
-    badge.textContent = "MANAGED";
+    badge.textContent = t("badgeManaged");
     li.appendChild(badge);
   }
 
@@ -116,7 +121,7 @@ async function loadBlockedCountries() {
   ) {
     const empty = document.createElement("li");
     empty.className = "empty-list";
-    empty.textContent = "No countries blocked";
+    empty.textContent = t("emptyCountries");
     blockedCountriesElement.appendChild(empty);
     return;
   }
@@ -127,8 +132,10 @@ async function loadBlockedCountries() {
   settings.userBlockedCountries
     .filter((country) => !settings.managedBlockedCountries.includes(country.code))
     .forEach((country) => {
-      appendCountry(blockedCountriesElement, country.name, () =>
-        removeCountry(country.code),
+      appendCountry(
+        blockedCountriesElement,
+        countryDisplayName(country.code, country.name),
+        () => removeCountry(country.code),
       );
     });
 }

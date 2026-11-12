@@ -82,20 +82,24 @@
         overflow-y: auto;
         border: 1px solid #eee;
         border-radius: 4px;
-        margin-top: 15px;
+        margin-top: 8px;
       }
       li {
-        padding: 10px;
+        padding: 3px 8px;
         border-bottom: 1px solid #eee;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 13px;
+        gap: 8px;
+        font-size: 12px;
+        line-height: 1.3;
       }
       li .domain-entry {
         display: flex;
         align-items: center;
         gap: 5px;
+        min-width: 0;
+        overflow-wrap: anywhere;
       }
       li .wildcard-badge {
         background-color: #4285f4;
@@ -111,7 +115,10 @@
       }
       .remove-btn {
         background-color: #dc3545;
-        padding: 3px 8px;
+        padding: 1px 6px;
+        margin-left: 0;
+        font-size: 11px;
+        flex-shrink: 0;
       }
       .empty-list {
         padding: 15px;
@@ -247,18 +254,31 @@
     <h2>Domain Whitelist Protector</h2>
 
     <div class="tab-container">
-      <div class="tab active" data-tab="domains">Domains</div>
-      <div class="tab" data-tab="country">Country Blocking</div>
-      <div class="tab" data-tab="import-export">Import/Export</div>
-      <div class="tab" data-tab="about">About</div>
+      <div class="tab active" data-tab="domains" data-i18n="tabDomains">
+        Domains
+      </div>
+      <div class="tab" data-tab="country" data-i18n="tabCountry">
+        Country Blocking
+      </div>
+      <div class="tab" data-tab="import-export" data-i18n="tabImportExport">
+        Import/Export
+      </div>
+      <div class="tab" data-tab="about" data-i18n="tabAbout">About</div>
     </div>
 
     <div id="domains" class="tab-content active">
       <div class="toggle-container">
         <div class="toggle-label">
-          <strong>Preemptive Domain Checks</strong>
-          <div>Check domains before loading pages</div>
-          <div class="managed-note" id="preemptive-managed" hidden>
+          <strong data-i18n="preemptiveTitle">Preemptive Domain Checks</strong>
+          <div data-i18n="preemptiveText">
+            Check domains before loading pages
+          </div>
+          <div
+            class="managed-note"
+            id="preemptive-managed"
+            data-i18n="managedByOrg"
+            hidden
+          >
             Managed by your organization
           </div>
         </div>
@@ -269,10 +289,17 @@
       </div>
 
       <div id="managed-section" hidden>
-        <h3 class="section-title">Managed by your organization:</h3>
+        <h3 class="section-title" data-i18n="managedHeading">
+          Managed by your organization:
+        </h3>
         <ul id="managed-whitelist"></ul>
       </div>
-      <p class="managed-note" id="user-whitelist-locked" hidden>
+      <p
+        class="managed-note"
+        id="user-whitelist-locked"
+        data-i18n="userLocked"
+        hidden
+      >
         Your organization does not allow adding your own domains.
       </p>
       <div id="user-section">
@@ -281,45 +308,61 @@
             type="text"
             id="new-domain"
             placeholder="e.g., example.com, *.example.com"
+            data-i18n-placeholder="domainPlaceholder"
           />
-          <button id="add-domain">Add</button>
+          <button id="add-domain" data-i18n="add">Add</button>
         </div>
         <div class="container">
-          <button id="add-current" class="full-width-btn">
+          <button
+            id="add-current"
+            class="full-width-btn"
+            data-i18n="addCurrent"
+          >
             Add Current Domain
           </button>
         </div>
-        <h3 class="section-title">Whitelisted Domains:</h3>
+        <h3 class="section-title" data-i18n="userHeading">
+          Whitelisted Domains:
+        </h3>
         <ul id="whitelist"></ul>
       </div>
     </div>
 
     <div id="country" class="tab-content">
-      <h3 class="section-title">Country Blocking</h3>
+      <h3 class="section-title" data-i18n="countryHeading">Country Blocking</h3>
       <div class="warning">
-        <div class="warning-icon">
+        <div class="warning-icon" data-i18n="countryWarning">
           &#9888;&#65039; Currently, this extension uses a plain HTTP request to
-          ip-api.com to retrieve geographical data for the
-          <strong>non whitelisted</strong> domains you access. This approach
-          presents potential security and privacy risks:
+          ip-api.com to retrieve geographical data for the non-whitelisted
+          domains you access. This approach presents potential security and
+          privacy risks:
         </div>
         <ul>
-          <li>
+          <li data-i18n="countryWarningNetwork">
             Network interceptors could potentially view the domains you are
             accessing
           </li>
-          <li>
+          <li data-i18n="countryWarningProvider">
             The ip-api.com service provider might track domain requests based on
             source IP address
           </li>
         </ul>
-        <p>Please note: We have no affiliation or agreement with ip-api.com.</p>
+        <p data-i18n="countryWarningNote">
+          Please note: We have no affiliation or agreement with ip-api.com.
+        </p>
       </div>
       <div class="toggle-container">
         <div class="toggle-label">
-          <strong>Country Checks</strong>
-          <div>Turning this off stops requests to ip-api.com</div>
-          <div class="managed-note" id="country-managed" hidden>
+          <strong data-i18n="countryToggleTitle">Country Checks</strong>
+          <div data-i18n="countryToggleText">
+            Turning this off stops requests to ip-api.com
+          </div>
+          <div
+            class="managed-note"
+            id="country-managed"
+            data-i18n="managedByOrg"
+            hidden
+          >
             Managed by your organization
           </div>
         </div>
@@ -330,24 +373,32 @@
       </div>
       <div class="container">
         <select id="country-select">
-          <option value="">Select Country to Block</option>
+          <option value="" data-i18n="countrySelect">
+            Select Country to Block
+          </option>
         </select>
-        <button id="block-country">Block Country</button>
+        <button id="block-country" data-i18n="countryBlock">
+          Block Country
+        </button>
       </div>
       <ul id="blocked-countries"></ul>
     </div>
 
     <div id="import-export" class="tab-content">
-      <h3 class="section-title">Import/Export</h3>
-      <button id="export-data" class="full-width-btn">Export Data</button>
-      <button id="import-data" class="full-width-btn">Import Data</button>
+      <h3 class="section-title" data-i18n="tabImportExport">Import/Export</h3>
+      <button id="export-data" class="full-width-btn" data-i18n="exportData">
+        Export Data
+      </button>
+      <button id="import-data" class="full-width-btn" data-i18n="importData">
+        Import Data
+      </button>
       <input type="file" id="import-file" style="display: none" />
     </div>
 
     <div id="about" class="tab-content">
       <div class="about-content">
         <h3>Domain Whitelist Protector</h3>
-        <p>
+        <p data-i18n="aboutText">
           A browser extension that helps you manage and protect your browsing
           experience by allowing you to whitelist domains and block potentially
           risky content.
@@ -356,6 +407,7 @@
           href="https://github.com/infnada/typosquatting-protect"
           class="github-link"
           target="_blank"
+          data-i18n="aboutGithub"
         >
           View on GitHub
         </a>

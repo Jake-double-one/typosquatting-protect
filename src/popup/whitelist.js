@@ -29,20 +29,20 @@ function renderDomainList(element, domains, { emptyText, onRemove }) {
     domainEntry.className = "domain-entry";
     domainEntry.appendChild(document.createTextNode(domain));
     if (domain.startsWith("*.")) {
-      domainEntry.appendChild(createBadge("wildcard-badge", "WILDCARD"));
+      domainEntry.appendChild(createBadge("wildcard-badge", t("badgeWildcard")));
     }
     li.appendChild(domainEntry);
 
     if (onRemove) {
       const removeButton = document.createElement("button");
-      removeButton.textContent = "Remove";
+      removeButton.textContent = t("remove");
       removeButton.className = "remove-btn";
       removeButton.addEventListener("click", function () {
         onRemove(domain);
       });
       li.appendChild(removeButton);
     } else {
-      li.appendChild(createBadge("managed-badge", "MANAGED"));
+      li.appendChild(createBadge("managed-badge", t("badgeManaged")));
     }
 
     element.appendChild(li);
@@ -65,7 +65,7 @@ async function loadWhitelist() {
   document.getElementById("user-whitelist-locked").hidden =
     settings.allowUserWhitelist;
   renderDomainList(document.getElementById("whitelist"), settings.userWhitelist, {
-    emptyText: "No domains in whitelist",
+    emptyText: t("emptyWhitelist"),
     onRemove: removeDomain,
   });
 }
@@ -73,11 +73,11 @@ async function loadWhitelist() {
 async function addEntry(input) {
   const entry = normalizeEntry(input);
   if (!entry) {
-    alert("This is not a valid domain.");
+    alert(t("alertInvalidDomain"));
     return false;
   }
   if (!(await addToUserWhitelist(entry))) {
-    alert("This domain is already in your whitelist.");
+    alert(t("alertAlreadyListed"));
     return false;
   }
   loadWhitelist();
@@ -101,7 +101,7 @@ async function addCurrentDomain() {
   if (tabs[0] && isHttpUrl(tabs[0].url)) {
     await addEntry(getDomain(tabs[0].url));
   } else {
-    alert("The current tab is not a web page.");
+    alert(t("alertNotWebPage"));
   }
 }
 

@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Domain Safety Check</title>
+    <title data-i18n="confirmPageTitle">Domain Safety Check</title>
     <meta charset="UTF-8" />
     <style>
       body {
@@ -102,24 +102,43 @@
   <body>
     <div class="container">
       <div class="warning-icon" id="icon">&#9888;&#65039;</div>
-      <h2 id="title">Non-Whitelisted Domain</h2>
-      <p>You are about to visit a domain that is not in your whitelist:</p>
+      <h2 id="title" data-i18n="confirmHeading">Non-Whitelisted Domain</h2>
+      <p data-i18n="confirmIntro">
+        You are about to visit a domain that is not in your whitelist:
+      </p>
       <div class="domain" id="domain-name"></div>
-      <p>This could potentially be a typosquatting or phishing attempt.</p>
+      <p data-i18n="confirmHint">
+        This could potentially be a typosquatting or phishing attempt.
+      </p>
       <div class="security-details" id="security-details"></div>
       <div class="buttons">
-        <button class="continue-whitelist" id="whitelist-continue">
+        <button
+          class="continue-whitelist"
+          id="whitelist-continue"
+          data-i18n="confirmWhitelist"
+        >
           Whitelist and Continue
         </button>
         <button class="continue-wildcard" id="wildcard-continue">
           Whitelist with Wildcard and Continue
         </button>
-        <button class="continue-only" id="just-continue">
+        <button
+          class="continue-only"
+          id="just-continue"
+          data-i18n="confirmContinue"
+        >
           Continue Without Whitelisting
         </button>
-        <button class="exit" id="exit-page">Don't Load This Page</button>
+        <button class="exit" id="exit-page" data-i18n="confirmExit">
+          Don't Load This Page
+        </button>
       </div>
-      <p class="managed-note" id="managed-note" hidden>
+      <p
+        class="managed-note"
+        id="managed-note"
+        data-i18n="confirmManaged"
+        hidden
+      >
         The whitelist is managed by your organization.
       </p>
     </div>

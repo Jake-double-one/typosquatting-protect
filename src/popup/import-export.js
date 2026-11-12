@@ -37,9 +37,7 @@ function importData(event) {
         !Array.isArray(importedData.whitelist) ||
         !Array.isArray(importedData.countryBlock)
       ) {
-        alert(
-          "Invalid format. The imported file must contain a JSON object with 'whitelist' and 'countryBlock' arrays.",
-        );
+        alert(t("alertImportFormat"));
         return;
       }
 
@@ -65,10 +63,13 @@ function importData(event) {
       loadBlockedCountries();
 
       alert(
-        `Successfully imported ${importedData.whitelist.length} domains and ${importedData.countryBlock.length} blocked countries.`,
+        t("alertImportDone", [
+          String(importedData.whitelist.length),
+          String(importedData.countryBlock.length),
+        ]),
       );
     } catch (error) {
-      alert("Error parsing the imported file: " + error.message);
+      alert(t("alertImportError", [error.message]));
     }
   };
 

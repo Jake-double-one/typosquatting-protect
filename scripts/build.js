@@ -17,7 +17,7 @@ const SHARED_FILES = [
   "confirmation.html",
   "confirmation.js",
 ];
-const SHARED_DIRECTORIES = ["images", "popup"];
+const SHARED_DIRECTORIES = ["images", "popup", "_locales"];
 const CHROME_ONLY_FILES = ["managed_schema.json"];
 
 const REQUIRED_FILES = [
@@ -25,6 +25,8 @@ const REQUIRED_FILES = [
   "manifest.firefox.json",
   "popup/popup.html",
   "popup/popup.js",
+  "_locales/en/messages.json",
+  "_locales/de/messages.json",
   ...SHARED_FILES,
   ...CHROME_ONLY_FILES,
 ];

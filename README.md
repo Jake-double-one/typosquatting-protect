@@ -11,6 +11,7 @@ A browser extension that protects against typosquatting and phishing by showing 
 - **Flexible Configuration**: Choose to whitelist domains permanently or allow temporarily for a session
 - **Import/Export Functionality**: Easily backup and transfer your whitelist between devices
 - **Simple Management**: Add the current domain to your whitelist with a single click
+- **English and German**: The interface follows the browser language
 - **Organization Whitelist**: Administrators can roll out a central whitelist and lock settings via Group Policy
 
 ## 📸 Screenshots

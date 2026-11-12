@@ -1,6 +1,8 @@
 // common.js is loaded before this file (see popup.html).
 
 document.addEventListener("DOMContentLoaded", function () {
+  localizePage();
+
   // Load and display whitelist
   loadWhitelist();
 

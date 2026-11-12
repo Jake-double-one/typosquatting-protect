@@ -1,5 +1,7 @@
 // common.js is loaded before this file (see confirmation.html).
 document.addEventListener("DOMContentLoaded", async function () {
+  localizePage();
+
   const urlParams = new URLSearchParams(window.location.search);
   const domain = urlParams.get("domain");
   const url = urlParams.get("url");
@@ -50,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     document.getElementById("managed-note").hidden = false;
   } else if (info && info.rootDomain) {
     wildcardDomain = `*.${info.rootDomain}`;
-    wildcardButton.textContent = `Whitelist ${wildcardDomain} and Continue`;
+    wildcardButton.textContent = t("confirmWildcard", [wildcardDomain]);
   } else {
     wildcardButton.remove();
   }
@@ -75,28 +77,28 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (geo.status === "disabled") {
       addParagraph(details, (p) => {
-        p.textContent = "Geolocation checks disabled";
+        p.textContent = t("geoDisabled");
       });
       return;
     }
 
     if (geo.status !== "enabled") {
       addParagraph(details, (p) => {
-        p.textContent = "Geolocation lookup failed";
+        p.textContent = t("geoFailed");
       });
       return;
     }
 
     if (geo.risk === "High") {
       document.getElementById("icon").textContent = "❗";
-      document.getElementById("title").textContent = "Blocked Country";
+      document.getElementById("title").textContent = t("geoBlockedTitle");
       addParagraph(details, (p) => {
         const strong = document.createElement("strong");
-        strong.textContent = "Geographical Risk Warning";
+        strong.textContent = t("geoRiskHeading");
         p.append(
           strong,
           document.createElement("br"),
-          "This domain originates from a blocked country.",
+          t("geoRiskText"),
         );
       });
       wildcardButton.remove();
@@ -105,20 +107,30 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     addParagraph(details, (p) => {
       const heading = document.createElement("strong");
-      heading.textContent = "Geolocation:";
+      heading.textContent = t("geoHeading");
       p.appendChild(heading);
       const rows = [
-        ["Country", geo.country],
-        ["Region", geo.region],
-        ["IP", geo.ip],
-        ["ISP", geo.isp],
+        [
+          t("geoCountry"),
+          geo.countryCode
+            ? countryDisplayName(geo.countryCode, geo.country)
+            : geo.country,
+        ],
+        [t("geoRegion"), geo.region],
+        [t("geoIp"), geo.ip],
+        [t("geoIsp"), geo.isp],
       ];
       for (const [label, value] of rows) {
-        p.append(document.createElement("br"), `${label}: ${value || "Unknown"}`);
+        p.append(document.createElement("br"), `${label}: ${value || t("unknown")}`);
       }
       const risk = document.createElement("strong");
-      risk.textContent = geo.risk || "Unknown";
-      p.append(document.createElement("br"), "Risk Level: ", risk);
+      risk.textContent =
+        geo.risk === "High"
+          ? t("geoRiskHigh")
+          : geo.risk === "Low"
+            ? t("geoRiskLow")
+            : t("unknown");
+      p.append(document.createElement("br"), `${t("geoRisk")}: `, risk);
     });
   }
 });

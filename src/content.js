@@ -27,12 +27,12 @@ async function createWarningBar(domain, allowUserWhitelist) {
   text.className = "warning-text";
   const strong = document.createElement("strong");
   strong.textContent = domain;
-  text.append("⚠️ Non-whitelisted domain: ", strong, " could be insecure");
+  text.append(t("barBefore"), strong, t("barAfter"));
   bar.appendChild(text);
 
   if (allowUserWhitelist) {
     bar.appendChild(
-      createButton("whitelist-btn", "Whitelist this domain", async () => {
+      createButton("whitelist-btn", t("barWhitelist"), async () => {
         await addToUserWhitelist(domain);
         removeWarningBar();
       }),
@@ -53,7 +53,7 @@ async function createWarningBar(domain, allowUserWhitelist) {
       bar.appendChild(
         createButton(
           "wildcard-whitelist-btn",
-          `Whitelist ${wildcardDomain}`,
+          t("barWhitelistWildcard", [wildcardDomain]),
           async () => {
             await addToUserWhitelist(wildcardDomain);
             removeWarningBar();
@@ -63,7 +63,9 @@ async function createWarningBar(domain, allowUserWhitelist) {
     }
   }
 
-  bar.appendChild(createButton("close-warning-btn", "×", removeWarningBar));
+  const closeButton = createButton("close-warning-btn", "×", removeWarningBar);
+  closeButton.title = t("barClose");
+  bar.appendChild(closeButton);
 
   // A newer check may have replaced or dismissed this bar in the meantime.
   if (warningBar === bar && document.body) {
