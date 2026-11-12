@@ -37,6 +37,22 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
   }
   bar.appendChild(text);
 
+  let info = null;
+  try {
+    info = await browserAPI.runtime.sendMessage({
+      action: "domainInfo",
+      hostname: domain,
+    });
+  } catch (e) {
+    // Extension was reloaded; show the bar without the extras.
+  }
+
+  if (!homograph && info && info.similarTo) {
+    const alert = document.createElement("strong");
+    alert.textContent = t("barSimilar", [info.similarTo]);
+    text.appendChild(alert);
+  }
+
   if (allowUserWhitelist) {
     bar.appendChild(
       createButton("whitelist-btn", t("barWhitelist"), async () => {
@@ -45,18 +61,8 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
       }),
     );
 
-    let rootDomain = null;
-    try {
-      const response = await browserAPI.runtime.sendMessage({
-        action: "getRootDomain",
-        hostname: domain,
-      });
-      rootDomain = response && response.rootDomain;
-    } catch (e) {
-      // Extension was reloaded; show the bar without the wildcard option.
-    }
-    if (rootDomain) {
-      const wildcardDomain = `*.${rootDomain}`;
+    if (info && info.rootDomain) {
+      const wildcardDomain = `*.${info.rootDomain}`;
       bar.appendChild(
         createButton(
           "wildcard-whitelist-btn",

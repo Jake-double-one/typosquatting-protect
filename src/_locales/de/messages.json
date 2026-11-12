@@ -241,5 +241,14 @@
   },
   "geoProviderInfo_geojs": {
     "message": "Bei Domains, die nicht auf der Whitelist stehen, wird der Domainname verschlüsselt an Google Public DNS gesendet, um die IP-Adresse zu ermitteln. Die IP-Adresse geht anschließend verschlüsselt an geojs.io. Bei einigen großen Hosting-Netzen kann dieser Dienst kein Land nennen."
+  },
+  "similarTitle": {
+    "message": "Ähnelt einer Domain auf der Whitelist"
+  },
+  "similarText": {
+    "message": "Diese Domain ähnelt $1 von Ihrer Whitelist, ist aber eine andere Domain. Prüfen Sie die Schreibweise genau, bevor Sie fortfahren."
+  },
+  "barSimilar": {
+    "message": " – ähnelt $1!"
   }
 }

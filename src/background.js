@@ -156,6 +156,106 @@ function getRootDomain(hostname) {
   return host.split(".").slice(-2).join(".");
 }
 
+// ---------------------------------------------------------------------------
+// Similarity check: does a domain resemble one on the whitelist?
+// Everything is computed locally by comparing names; nothing is looked up.
+// ---------------------------------------------------------------------------
+
+// Number of edits (insert, delete, replace, swap neighbours) between a and b.
+function editDistance(a, b) {
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const d = Array.from({ length: rows }, (_, i) => [i, ...Array(cols - 1).fill(0)]);
+  for (let j = 0; j < cols; j++) d[0][j] = j;
+
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+      }
+    }
+  }
+  return d[a.length][b.length];
+}
+
+// Reduces a name to how it looks at a glance: "rn" reads like "m",
+// "0" like "o", "1" and "i" like "l", "vv" like "w".
+function visualForm(name) {
+  return name
+    .replace(/-/g, "")
+    .replace(/rn/g, "m")
+    .replace(/vv/g, "w")
+    .replace(/cl/g, "d")
+    .replace(/0/g, "o")
+    .replace(/[1i|]/g, "l")
+    .replace(/5/g, "s");
+}
+
+// Splits "www.share-point.co.uk" into name "share-point" and ending "co.uk".
+function splitRegistrableDomain(hostname) {
+  const root = getRootDomain(hostname);
+  if (!root) return null;
+  const dot = root.indexOf(".");
+  if (dot < 1) return null;
+  return { root, name: root.slice(0, dot), ending: root.slice(dot + 1) };
+}
+
+// Returns the whitelisted domain that `hostname` resembles, or null.
+function findSimilarWhitelisted(hostname, whitelist) {
+  const host = (hostname || "").toLowerCase().replace(/\.$/, "");
+  const candidate = splitRegistrableDomain(host);
+  if (!candidate) return null;
+  const candidateVisual = visualForm(candidate.name);
+
+  let best = null;
+  const seen = new Set();
+  for (const entry of whitelist) {
+    const trusted = splitRegistrableDomain(entry.replace(/^\*\./, ""));
+    if (!trusted || seen.has(trusted.root)) continue;
+    seen.add(trusted.root);
+
+    // Same organization, e.g. another subdomain of a whitelisted domain
+    if (trusted.root === candidate.root) return null;
+
+    // "sharepoint.com.evil.net": the trusted domain is only a subdomain
+    if (host.startsWith(`${trusted.root}.`) || host.includes(`.${trusted.root}.`)) {
+      return trusted.root;
+    }
+
+    const name = trusted.name;
+    if (name.length < 4) continue;
+
+    let score = null;
+    if (candidate.name === name) {
+      score = 0; // same name, different ending (.co instead of .com)
+    } else if (candidateVisual === visualForm(name)) {
+      score = 0; // "rnicrosoft", "amaz0n"
+    } else if (
+      name.length >= 6 &&
+      candidate.name.length > name.length &&
+      (candidate.name.split(/[-_0-9]+/).includes(name) ||
+        candidate.name.startsWith(name) ||
+        candidate.name.endsWith(name))
+    ) {
+      score = 1; // "sharepoint-login", "securesharepoint"
+    } else if (
+      name.length >= 5 && // short names differ by one letter too often
+      Math.abs(candidate.name.length - name.length) <= 2
+    ) {
+      const allowed = name.length >= 10 ? 2 : 1;
+      const distance = editDistance(candidate.name, name);
+      if (distance <= allowed) score = distance; // typos
+    }
+
+    if (score !== null && (!best || score < best.score)) {
+      best = { score, root: trusted.root };
+    }
+  }
+  return best ? best.root : null;
+}
+
 async function checkTabNavigation(tabId, url) {
   // Only web pages are checked; browser, extension and file pages are not.
   if (!isHttpUrl(url)) return;
@@ -180,14 +280,20 @@ async function handleMessage(message, sender) {
     fromExtensionPage && sender.url.startsWith(CONFIRMATION_URL) && sender.tab;
 
   switch (message.action) {
-    case "getRootDomain":
-      return { rootDomain: await getRootDomain(message.hostname) };
+    case "domainInfo": {
+      const settings = await loadSettings();
+      return {
+        rootDomain: getRootDomain(message.hostname),
+        similarTo: findSimilarWhitelisted(message.hostname, settings.whitelist),
+      };
+    }
 
     case "confirmationInfo": {
       if (!fromConfirmation) return {};
       const settings = await loadSettings();
       return {
-        rootDomain: await getRootDomain(message.domain),
+        rootDomain: getRootDomain(message.domain),
+        similarTo: findSimilarWhitelisted(message.domain, settings.whitelist),
         allowUserWhitelist: settings.allowUserWhitelist,
       };
     }

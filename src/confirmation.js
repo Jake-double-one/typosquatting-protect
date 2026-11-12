@@ -43,7 +43,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Lookalike characters and the organization's note
   const settings = await loadSettings();
-  renderHomograph(analyzeHomograph(domain, settings.whitelist));
+  const homograph = analyzeHomograph(domain, settings.whitelist);
+  renderHomograph(homograph);
   if (settings.noticeText) {
     const notice = document.getElementById("org-notice");
     const heading = document.createElement("strong");
@@ -57,6 +58,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     action: "confirmationInfo",
     domain: domain,
   });
+  if (!homograph && info && info.similarTo) {
+    const box = document.getElementById("similar-warning");
+    const heading = document.createElement("strong");
+    heading.textContent = `⚠️ ${t("similarTitle")}`;
+    box.appendChild(heading);
+    addParagraph(box, (p) => {
+      p.textContent = t("similarText", [info.similarTo]);
+    });
+    box.hidden = false;
+  }
+
   if (info && info.allowUserWhitelist === false) {
     whitelistButton.remove();
     wildcardButton.remove();

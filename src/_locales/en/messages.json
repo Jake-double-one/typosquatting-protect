@@ -241,5 +241,14 @@
   },
   "geoProviderInfo_geojs": {
     "message": "For non-whitelisted domains, the domain name is sent encrypted to Google Public DNS to find its IP address. The IP address is then sent encrypted to geojs.io. For some large hosting networks this service cannot name a country."
+  },
+  "similarTitle": {
+    "message": "Similar to a whitelisted domain"
+  },
+  "similarText": {
+    "message": "This domain resembles $1 from your whitelist, but it is a different domain. Check the spelling carefully before you continue."
+  },
+  "barSimilar": {
+    "message": " – similar to $1!"
   }
 }
