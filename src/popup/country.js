@@ -61,39 +61,74 @@ async function removeCountry(coutryCode) {
   loadBlockedCountries();
 }
 
-async function loadBlockedCountries() {
-  const result = await browserAPI.storage.sync.get(["blockedCountries"]);
-  const blockedCountries = result.blockedCountries || [];
-  const blockedCountriesElement = document.getElementById("blocked-countries");
-  blockedCountriesElement.innerHTML = "";
+let countryNames = null;
 
-  if (blockedCountries.length === 0) {
-    blockedCountriesElement.innerHTML =
-      '<li class="empty-list">No countries blocked</li>';
-    return;
+async function getCountryName(code) {
+  if (!countryNames) {
+    countryNames = {};
+    try {
+      const data = await (await fetch("countries.json")).json();
+      data.forEach((country) => {
+        countryNames[country.code] = country.name;
+      });
+    } catch (error) {
+      // Fall back to showing the country code
+    }
   }
+  return countryNames[code] || code;
+}
 
-  blockedCountries.forEach(function (c) {
-    const country = JSON.parse(c);
-    const li = document.createElement("li");
+function appendCountry(listElement, name, onRemove) {
+  const li = document.createElement("li");
 
-    const countryEntry = document.createElement("div");
-    countryEntry.className = "domain-entry";
+  const countryEntry = document.createElement("div");
+  countryEntry.className = "domain-entry";
+  countryEntry.appendChild(document.createTextNode(name));
+  li.appendChild(countryEntry);
 
-    // Text for the domain
-    const countryText = document.createTextNode(country.name);
-    countryEntry.appendChild(countryText);
-
-    li.appendChild(countryEntry);
-
+  if (onRemove) {
     const removeButton = document.createElement("button");
     removeButton.textContent = "Remove";
     removeButton.className = "remove-btn";
-    removeButton.addEventListener("click", function () {
-      removeCountry(country.code);
-    });
-
+    removeButton.addEventListener("click", onRemove);
     li.appendChild(removeButton);
-    blockedCountriesElement.appendChild(li);
-  });
+  } else {
+    const badge = document.createElement("span");
+    badge.className = "managed-badge";
+    badge.textContent = "MANAGED";
+    li.appendChild(badge);
+  }
+
+  listElement.appendChild(li);
+}
+
+async function loadBlockedCountries() {
+  const settings = await loadSettings();
+  const managedNames = await Promise.all(
+    settings.managedBlockedCountries.map(getCountryName),
+  );
+  const blockedCountriesElement = document.getElementById("blocked-countries");
+  blockedCountriesElement.textContent = "";
+
+  if (
+    settings.managedBlockedCountries.length === 0 &&
+    settings.userBlockedCountries.length === 0
+  ) {
+    const empty = document.createElement("li");
+    empty.className = "empty-list";
+    empty.textContent = "No countries blocked";
+    blockedCountriesElement.appendChild(empty);
+    return;
+  }
+
+  // Countries blocked by the organization cannot be removed
+  managedNames.forEach((name) => appendCountry(blockedCountriesElement, name));
+
+  settings.userBlockedCountries
+    .filter((country) => !settings.managedBlockedCountries.includes(country.code))
+    .forEach((country) => {
+      appendCountry(blockedCountriesElement, country.name, () =>
+        removeCountry(country.code),
+      );
+    });
 }

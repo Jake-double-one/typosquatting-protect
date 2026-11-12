@@ -1,16 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Domain Whitelist Protector",
-  "version": "2.2",
+  "version": "3.0",
   "description": "Protects against typosquatting and phishing with Geolocation checks by showing warnings for non-whitelisted domains",
-  "permissions": [
-    "storage",
-    "activeTab",
-    "scripting",
-    "tabs",
-    "webNavigation",
-    "webRequest"
-  ],
+  "minimum_chrome_version": "153",
+  "permissions": ["storage", "tabs", "webNavigation", "publicSuffix"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup/popup.html",
@@ -28,7 +22,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["common.js", "content.js"],
       "css": ["styles.css"],
       "run_at": "document_start"
     }
@@ -36,16 +30,9 @@
   "background": {
     "service_worker": "background.js"
   },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "confirmation.html",
-        "confirmation.js",
-        "popup/countries.json"
-      ],
-      "matches": ["<all_urls>"]
-    }
-  ],
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   }

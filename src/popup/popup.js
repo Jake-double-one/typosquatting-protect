@@ -1,5 +1,4 @@
-// Use the appropriate API based on browser environment
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+// common.js is loaded before this file (see popup.html).
 
 document.addEventListener("DOMContentLoaded", function () {
   // Load and display whitelist
@@ -93,16 +92,17 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 async function loadToggleState() {
-  const result = await browserAPI.storage.sync.get([
-    "enablePreemptiveChecks",
-    "enableCountryBlock",
-  ]);
-  document.getElementById("preemptive-check-toggle").checked =
-    result.enablePreemptiveChecks === undefined
-      ? true
-      : result.enablePreemptiveChecks;
-  document.getElementById("country-block-toggle").checked =
-    result.enableCountryBlock === undefined ? true : result.enableCountryBlock;
+  const settings = await loadSettings();
+  const toggles = [
+    ["preemptive-check-toggle", "preemptive-managed", "enablePreemptiveChecks"],
+    ["country-block-toggle", "country-managed", "enableCountryBlock"],
+  ];
+  for (const [toggleId, noteId, key] of toggles) {
+    const toggle = document.getElementById(toggleId);
+    toggle.checked = settings[key];
+    toggle.disabled = settings.locked[key];
+    document.getElementById(noteId).hidden = !settings.locked[key];
+  }
 }
 
 function togglePreemptiveChecks(enabled) {
@@ -118,3 +118,12 @@ function toggleCountryBlock(enabled) {
     enabled: enabled,
   });
 }
+
+// Keep the popup in sync with policy and storage changes
+browserAPI.storage.onChanged.addListener((changes, areaName) => {
+  if (settingsChanged(changes, areaName)) {
+    loadToggleState();
+    loadWhitelist();
+    loadBlockedCountries();
+  }
+});

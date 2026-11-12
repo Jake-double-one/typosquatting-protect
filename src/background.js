@@ -1,28 +1,27 @@
-// Use the appropriate API based on browser environment
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+// Chromium loads the helpers here; Firefox lists common.js in its manifest.
+if (typeof loadSettings === "undefined") {
+  importScripts("common.js");
+}
 
-let enablePreemptiveChecks = true;
-let enableCountryBlock = true;
-let sessionAllowedDomains = [];
+const EXTENSION_ORIGIN = browserAPI.runtime.getURL("");
+const CONFIRMATION_URL = browserAPI.runtime.getURL("confirmation.html");
+const GEO_TIMEOUT_MS = 5000;
 
-browserAPI.runtime.onInstalled.addListener(() => {
-  // Initialize with empty whitelist and enabled preemptive checks
-  const result = browserAPI.storage.sync.get([
-    "whitelist",
-    "enablePreemptiveChecks",
-  ]);
-  if (!result.whitelist) {
-    browserAPI.storage.sync.set({ whitelist: [] });
-  }
-  if (result.enablePreemptiveChecks === undefined) {
-    browserAPI.storage.sync.set({ enablePreemptiveChecks: true });
-  }
-  if (result.enableCountryBlock === undefined) {
-    browserAPI.storage.sync.set({ enableCountryBlock: true });
-  }
-});
+// Domains the user allowed "just for now". Kept in session storage because
+// the service worker is stopped when idle and loses its variables.
+async function getSessionAllowedDomains() {
+  const result = await browserAPI.storage.session.get(["sessionAllowedDomains"]);
+  return result.sessionAllowedDomains || [];
+}
 
-// Listen for tab updates
+async function allowDomainForSession(domain) {
+  const domains = await getSessionAllowedDomains();
+  if (domain && !domains.includes(domain)) {
+    domains.push(domain);
+    await browserAPI.storage.session.set({ sessionAllowedDomains: domains });
+  }
+}
+
 browserAPI.webNavigation.onCommitted.addListener((details) => {
   // Only check main frame navigations
   if (details.frameId === 0) {
@@ -30,152 +29,149 @@ browserAPI.webNavigation.onCommitted.addListener((details) => {
   }
 });
 
-// Geolocation Checks
 async function checkIPGeolocation(url) {
-  const result = await browserAPI.storage.sync.get(["enableCountryBlock"]);
-  if (!result.enableCountryBlock) {
-    return {
-      status: "disabled",
-    };
+  const settings = await loadSettings();
+  if (!settings.enableCountryBlock) {
+    return { status: "disabled" };
   }
 
   try {
     const hostname = new URL(url).hostname;
-    const response = await fetch(`http://ip-api.com/json/${hostname}`);
+    const response = await fetch(
+      `http://ip-api.com/json/${encodeURIComponent(hostname)}`,
+      { signal: AbortSignal.timeout(GEO_TIMEOUT_MS) },
+    );
     const data = await response.json();
+    const countryCode =
+      typeof data.countryCode === "string" ? data.countryCode.toUpperCase() : "";
 
     return {
       status: "enabled",
       country: data.country,
-      countryCode: data.countryCode,
+      countryCode,
       region: data.regionName,
       city: data.city,
       ip: data.query,
       isp: data.isp,
-      risk: await assessGeographicalRisk(data.countryCode),
+      risk: settings.blockedCountryCodes.includes(countryCode) ? "High" : "Low",
     };
   } catch (error) {
-    return {
-      error: "Geolocation lookup failed",
-    };
+    return { error: "Geolocation lookup failed" };
   }
 }
 
-async function assessGeographicalRisk(countryCode) {
-  const result = await browserAPI.storage.sync.get(["blockedCountries"]);
-  const blockedCountries = result.blockedCountries || [];
+// Registrable domain ("example.co.uk" for "www.example.co.uk"), used for the
+// wildcard suggestion. Null when there is none (IP addresses, "localhost").
+function getRootDomain(hostname) {
+  const host = (hostname || "").toLowerCase().replace(/\.$/, "");
+  if (!host || !host.includes(".") || host.includes(":")) return null;
+  if (/^\d+(\.\d+){3}$/.test(host)) return null;
 
-  if (blockedCountries.map((c) => JSON.parse(c).code).includes(countryCode)) {
-    return "High";
-  }
-  return "Low";
-}
-
-function getDomain(url) {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.hostname;
-  } catch (e) {
-    return "";
-  }
-}
-
-function isWhitelisted(domain, whitelist) {
-  // Direct match
-  if (whitelist.includes(domain)) {
-    return true;
-  }
-
-  // Check for wildcard matches
-  for (const entry of whitelist) {
-    if (entry.startsWith("*.") && domain.endsWith(entry.substring(2))) {
-      return true;
+  if (browserAPI.publicSuffix?.getDomain) {
+    try {
+      // allowUnknownSuffix keeps internal names like "wiki.corp.internal" usable
+      return (
+        browserAPI.publicSuffix.getDomain(host, { allowUnknownSuffix: true }) ||
+        null
+      );
+    } catch (e) {
+      return null;
     }
   }
 
-  return false;
+  // Browsers without the publicSuffix API: last two labels.
+  return host.split(".").slice(-2).join(".");
 }
 
 async function checkTabNavigation(tabId, url) {
-  const result = await browserAPI.storage.sync.get([
-    "whitelist",
-    "enablePreemptiveChecks",
-  ]);
-  if (!result.enablePreemptiveChecks) return;
+  // Only web pages are checked; browser, extension and file pages are not.
+  if (!isHttpUrl(url)) return;
 
-  const whitelist = result.whitelist || [];
   const domain = getDomain(url);
+  if (!domain) return;
 
-  // Skip about:, chrome:, moz:, file: and empty URLs
-  if (
-    !domain ||
-    url.startsWith("about:") ||
-    url.startsWith("chrome:") ||
-    url.startsWith("moz:") ||
-    url.startsWith("file:") ||
-    url.includes("confirmation.html")
-  ) {
-    return;
-  }
+  const settings = await loadSettings();
+  if (!settings.enablePreemptiveChecks) return;
+  if (isWhitelisted(domain, settings.whitelist)) return;
+  if ((await getSessionAllowedDomains()).includes(domain)) return;
 
-  // Skip whitelisted domains and session-allowed domains
-  if (
-    isWhitelisted(domain, whitelist) ||
-    sessionAllowedDomains.includes(domain)
-  ) {
-    return;
-  }
-
-  // Create a confirmation popup
   browserAPI.tabs.update(tabId, {
-    url: browserAPI.runtime.getURL(
-      `confirmation.html?domain=${encodeURIComponent(domain)}&url=${encodeURIComponent(url)}&tabId=${tabId}`,
-    ),
+    url: `${CONFIRMATION_URL}?domain=${encodeURIComponent(domain)}&url=${encodeURIComponent(url)}`,
   });
 }
 
-// Listen for messages from confirmation.html
-browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "continueNavigation") {
-    // Add domain to session-allowed list
-    const domain = message.domain;
-    if (domain && !sessionAllowedDomains.includes(domain)) {
-      sessionAllowedDomains.push(domain);
-    }
-    browserAPI.tabs.update(message.tabId, { url: message.url });
-  } else if (message.action === "whitelistAndContinue") {
-    // Add domain to global whitelist
-    browserAPI.storage.sync.get(["whitelist"]).then((result) => {
-      const whitelist = result.whitelist || [];
-      if (!whitelist.includes(message.domain)) {
-        whitelist.push(message.domain);
-        browserAPI.storage.sync.set({ whitelist }).then(() => {
-          browserAPI.tabs.update(message.tabId, { url: message.url });
-        });
-      } else {
-        browserAPI.tabs.update(message.tabId, { url: message.url });
-      }
-    });
-  } else if (message.action === "exitNavigation") {
-    browserAPI.tabs.remove(message.tabId);
-  } else if (message.action === "togglePreemptiveChecks") {
-    browserAPI.storage.sync.set({ enablePreemptiveChecks: message.enabled });
-  } else if (message.action === "toggleCountryBlock") {
-    browserAPI.storage.sync.set({ enableCountryBlock: message.enabled });
-  } else if (message.action === "securityCheck") {
-    // Handle security check requests
-    Promise.all([checkIPGeolocation(message.url)])
-      .then(([geoCheck]) => {
-        sendResponse({ geo: geoCheck });
-      })
-      .catch((error) => {
-        sendResponse({ error: error.message });
-      });
-    return true;
-  }
-});
+async function handleMessage(message, sender) {
+  const fromExtensionPage =
+    typeof sender.url === "string" && sender.url.startsWith(EXTENSION_ORIGIN);
+  const fromConfirmation =
+    fromExtensionPage && sender.url.startsWith(CONFIRMATION_URL) && sender.tab;
 
-// Clear session-allowed domains when browser is closed (via extension unload)
-browserAPI.runtime.onSuspend?.addListener(() => {
-  sessionAllowedDomains = [];
+  switch (message.action) {
+    case "getRootDomain":
+      return { rootDomain: await getRootDomain(message.hostname) };
+
+    case "confirmationInfo": {
+      if (!fromConfirmation) return {};
+      const settings = await loadSettings();
+      return {
+        rootDomain: await getRootDomain(message.domain),
+        allowUserWhitelist: settings.allowUserWhitelist,
+      };
+    }
+
+    case "securityCheck":
+      if (!fromConfirmation) return {};
+      return { geo: await checkIPGeolocation(message.url) };
+
+    case "continueNavigation":
+      if (!fromConfirmation || !isHttpUrl(message.url)) return {};
+      await allowDomainForSession(getDomain(message.url));
+      await browserAPI.tabs.update(sender.tab.id, { url: message.url });
+      return {};
+
+    case "whitelistAndContinue": {
+      if (!fromConfirmation || !isHttpUrl(message.url)) return {};
+      const settings = await loadSettings();
+      const entry = normalizeEntry(message.domain);
+      // The entry must cover the page that is being opened.
+      if (
+        settings.allowUserWhitelist &&
+        entry &&
+        isWhitelisted(getDomain(message.url), [entry])
+      ) {
+        await addToUserWhitelist(entry);
+        await browserAPI.tabs.update(sender.tab.id, { url: message.url });
+      }
+      return {};
+    }
+
+    case "exitNavigation":
+      if (fromConfirmation) await browserAPI.tabs.remove(sender.tab.id);
+      return {};
+
+    case "togglePreemptiveChecks":
+    case "toggleCountryBlock": {
+      if (!fromExtensionPage) return {};
+      const key =
+        message.action === "togglePreemptiveChecks"
+          ? "enablePreemptiveChecks"
+          : "enableCountryBlock";
+      const settings = await loadSettings();
+      if (!settings.locked[key]) {
+        await browserAPI.storage.sync.set({ [key]: Boolean(message.enabled) });
+      }
+      return {};
+    }
+
+    default:
+      return {};
+  }
+}
+
+browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || sender.id !== browserAPI.runtime.id) return false;
+  handleMessage(message, sender)
+    .then(sendResponse)
+    .catch((error) => sendResponse({ error: error.message }));
+  return true;
 });

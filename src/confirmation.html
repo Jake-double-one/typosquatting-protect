@@ -83,6 +83,13 @@
       .exit:hover {
         background-color: #d32f2f;
       }
+      .managed-note {
+        color: #777;
+        font-size: 12px;
+      }
+      .security-details:empty {
+        display: none;
+      }
       .security-details {
         background-color: #f1f1f1;
         padding: 15px;
@@ -112,9 +119,12 @@
         </button>
         <button class="exit" id="exit-page">Don't Load This Page</button>
       </div>
+      <p class="managed-note" id="managed-note" hidden>
+        The whitelist is managed by your organization.
+      </p>
     </div>
 
-    <script src="browser-polyfill.js"></script>
+    <script src="common.js"></script>
     <script src="confirmation.js"></script>
   </body>
 </html>

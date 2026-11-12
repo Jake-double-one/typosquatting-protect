@@ -1,104 +1,124 @@
-// Use the appropriate API based on browser environment
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
-
+// common.js is loaded before this file (see confirmation.html).
 document.addEventListener("DOMContentLoaded", async function () {
   const urlParams = new URLSearchParams(window.location.search);
   const domain = urlParams.get("domain");
-  const warningType = urlParams.get("type");
   const url = urlParams.get("url");
-  const tabId = parseInt(urlParams.get("tabId"));
 
   document.getElementById("domain-name").textContent = domain;
 
-  const detailsElement = document.getElementById("security-details");
+  const whitelistButton = document.getElementById("whitelist-continue");
+  const wildcardButton = document.getElementById("wildcard-continue");
+  const continueButton = document.getElementById("just-continue");
+  let wildcardDomain = null;
 
-  // Fetch additional details
+  whitelistButton.addEventListener("click", function () {
+    browserAPI.runtime.sendMessage({
+      action: "whitelistAndContinue",
+      domain: domain,
+      url: url,
+    });
+  });
+
+  wildcardButton.addEventListener("click", function () {
+    if (!wildcardDomain) return;
+    browserAPI.runtime.sendMessage({
+      action: "whitelistAndContinue",
+      domain: wildcardDomain,
+      url: url,
+    });
+  });
+
+  continueButton.addEventListener("click", function () {
+    browserAPI.runtime.sendMessage({
+      action: "continueNavigation",
+      url: url,
+    });
+  });
+
+  document.getElementById("exit-page").addEventListener("click", function () {
+    browserAPI.runtime.sendMessage({ action: "exitNavigation" });
+  });
+
+  // Whitelisting options depend on the organization policy
+  const info = await browserAPI.runtime.sendMessage({
+    action: "confirmationInfo",
+    domain: domain,
+  });
+  if (info && info.allowUserWhitelist === false) {
+    whitelistButton.remove();
+    wildcardButton.remove();
+    document.getElementById("managed-note").hidden = false;
+  } else if (info && info.rootDomain) {
+    wildcardDomain = `*.${info.rootDomain}`;
+    wildcardButton.textContent = `Whitelist ${wildcardDomain} and Continue`;
+  } else {
+    wildcardButton.remove();
+  }
+
+  // Geolocation details
   const response = await browserAPI.runtime.sendMessage({
     action: "securityCheck",
     url: url,
   });
+  renderGeo(response && response.geo);
 
-  if (response && response.geo) {
-    if (response.geo.status === "disabled") {
-      detailsElement.innerHTML = `
-        <p>
-          Geolocation checks disabled
-        </p>
-      `;
-    }
-
-    if (response.geo.status === "enabled" && response.geo) {
-      if (response.geo.risk === "High") {
-        document.getElementById("icon").textContent = "❗";
-        document.getElementById("title").textContent = "Blocked Country";
-        detailsElement.innerHTML = `
-        <p>
-          <strong>Geographical Risk Warning</strong><br>
-          This domain originates from a country which you explicitly block.
-        </p>
-      `;
-
-        document.getElementById("wildcard-continue").remove();
-        document.getElementById("just-continue").remove();
-      }
-
-      detailsElement.innerHTML += `
-      <p>
-      <strong>Geolocation:</strong>
-      <br>Country: ${response.geo.country || "Unknown"}
-      <br>Region: ${response.geo.region || "Unknown"}
-      <br>IP: ${response.geo.ip || "Unknown"}
-      <br>ISP: ${response.geo.isp || "Unknown"}
-      <br>Risk Level: <strong>${response.geo.risk || "Unknown"}</strong>
-      </p>
-    `;
-    }
+  function addParagraph(parent, build) {
+    const p = document.createElement("p");
+    build(p);
+    parent.appendChild(p);
   }
 
-  document
-    .getElementById("whitelist-continue")
-    .addEventListener("click", function () {
-      browserAPI.runtime.sendMessage({
-        action: "whitelistAndContinue",
-        domain: domain,
-        url: url,
-        tabId: tabId,
-      });
-    });
+  function renderGeo(geo) {
+    const details = document.getElementById("security-details");
+    details.textContent = "";
+    if (!geo) return;
 
-  const wcelement = document.getElementById("wildcard-continue");
-  wcelement &&
-    wcelement.addEventListener("click", function () {
-      // Get root domain for wildcard
-      const domainParts = domain.split(".");
-      let rootDomain = domain;
-      if (domainParts.length > 2) {
-        rootDomain = domainParts.slice(domainParts.length - 2).join(".");
+    if (geo.status === "disabled") {
+      addParagraph(details, (p) => {
+        p.textContent = "Geolocation checks disabled";
+      });
+      return;
+    }
+
+    if (geo.status !== "enabled") {
+      addParagraph(details, (p) => {
+        p.textContent = "Geolocation lookup failed";
+      });
+      return;
+    }
+
+    if (geo.risk === "High") {
+      document.getElementById("icon").textContent = "❗";
+      document.getElementById("title").textContent = "Blocked Country";
+      addParagraph(details, (p) => {
+        const strong = document.createElement("strong");
+        strong.textContent = "Geographical Risk Warning";
+        p.append(
+          strong,
+          document.createElement("br"),
+          "This domain originates from a blocked country.",
+        );
+      });
+      wildcardButton.remove();
+      continueButton.remove();
+    }
+
+    addParagraph(details, (p) => {
+      const heading = document.createElement("strong");
+      heading.textContent = "Geolocation:";
+      p.appendChild(heading);
+      const rows = [
+        ["Country", geo.country],
+        ["Region", geo.region],
+        ["IP", geo.ip],
+        ["ISP", geo.isp],
+      ];
+      for (const [label, value] of rows) {
+        p.append(document.createElement("br"), `${label}: ${value || "Unknown"}`);
       }
-
-      browserAPI.runtime.sendMessage({
-        action: "whitelistAndContinue",
-        domain: `*.${rootDomain}`,
-        url: url,
-        tabId: tabId,
-      });
+      const risk = document.createElement("strong");
+      risk.textContent = geo.risk || "Unknown";
+      p.append(document.createElement("br"), "Risk Level: ", risk);
     });
-
-  const jcelement = document.getElementById("just-continue");
-  jcelement &&
-    jcelement.addEventListener("click", function () {
-      browserAPI.runtime.sendMessage({
-        action: "continueNavigation",
-        domain: domain,
-        url: url,
-        tabId: tabId,
-      });
-    });
-
-  document.getElementById("exit-page").addEventListener("click", function () {
-    browserAPI.runtime.sendMessage({
-      action: "exitNavigation",
-      tabId: tabId,
-    });
-  });
+  }
 });

@@ -1,98 +1,85 @@
-// Use the appropriate API based on browser environment
-const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+// common.js is loaded before this file (see manifest).
 let warningBar = null;
 
-function getDomain(url) {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.hostname;
-  } catch (e) {
-    return "";
+function removeWarningBar() {
+  if (warningBar) {
+    warningBar.remove();
+    warningBar = null;
   }
 }
 
-function isWhitelisted(domain, whitelist) {
-  // Direct match
-  if (whitelist.includes(domain)) {
-    return true;
-  }
+function createButton(id, label, onClick) {
+  const button = document.createElement("button");
+  button.id = id;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
 
-  // Check for wildcard matches
-  for (const entry of whitelist) {
-    if (entry.startsWith("*.") && domain.endsWith(entry.substring(2))) {
-      return true;
+async function createWarningBar(domain, allowUserWhitelist) {
+  removeWarningBar();
+
+  const bar = document.createElement("div");
+  bar.id = "whitelist-warning-bar";
+  warningBar = bar;
+
+  const text = document.createElement("span");
+  text.className = "warning-text";
+  const strong = document.createElement("strong");
+  strong.textContent = domain;
+  text.append("⚠️ Non-whitelisted domain: ", strong, " could be insecure");
+  bar.appendChild(text);
+
+  if (allowUserWhitelist) {
+    bar.appendChild(
+      createButton("whitelist-btn", "Whitelist this domain", async () => {
+        await addToUserWhitelist(domain);
+        removeWarningBar();
+      }),
+    );
+
+    let rootDomain = null;
+    try {
+      const response = await browserAPI.runtime.sendMessage({
+        action: "getRootDomain",
+        hostname: domain,
+      });
+      rootDomain = response && response.rootDomain;
+    } catch (e) {
+      // Extension was reloaded; show the bar without the wildcard option.
+    }
+    if (rootDomain) {
+      const wildcardDomain = `*.${rootDomain}`;
+      bar.appendChild(
+        createButton(
+          "wildcard-whitelist-btn",
+          `Whitelist ${wildcardDomain}`,
+          async () => {
+            await addToUserWhitelist(wildcardDomain);
+            removeWarningBar();
+          },
+        ),
+      );
     }
   }
 
-  return false;
-}
+  bar.appendChild(createButton("close-warning-btn", "×", removeWarningBar));
 
-function createWarningBar(domain) {
-  // Remove existing warning bar if it exists
-  if (warningBar) {
-    warningBar.remove();
+  // A newer check may have replaced or dismissed this bar in the meantime.
+  if (warningBar === bar && document.body) {
+    document.body.insertBefore(bar, document.body.firstChild);
   }
-
-  // Get root domain for wildcard suggestion
-  const domainParts = domain.split(".");
-  let rootDomain = domain;
-  if (domainParts.length > 2) {
-    rootDomain = domainParts.slice(domainParts.length - 2).join(".");
-  }
-
-  // Create warning bar with added wildcard option
-  warningBar = document.createElement("div");
-  warningBar.id = "whitelist-warning-bar";
-  warningBar.innerHTML = `
-    <span class="warning-text">⚠️ Non-whitelisted domain: <strong>${domain}</strong> could be insecure</span>
-    <button id="whitelist-btn">Whitelist this domain</button>
-    <button id="wildcard-whitelist-btn">Whitelist *.${rootDomain}</button>
-    <button id="close-warning-btn">×</button>
-  `;
-
-  // Insert at the top of the body
-  document.body.insertBefore(warningBar, document.body.firstChild);
-
-  // Add event listeners
-  document
-    .getElementById("whitelist-btn")
-    .addEventListener("click", async () => {
-      const result = await browserAPI.storage.sync.get(["whitelist"]);
-      const whitelist = result.whitelist || [];
-      if (!whitelist.includes(domain)) {
-        whitelist.push(domain);
-        browserAPI.storage.sync.set({ whitelist });
-      }
-      warningBar.remove();
-    });
-
-  // Add wildcard whitelist button listener
-  document
-    .getElementById("wildcard-whitelist-btn")
-    .addEventListener("click", () => {
-      const result = browserAPI.storage.sync.get(["whitelist"]);
-      const whitelist = result.whitelist || [];
-      const wildcardDomain = `*.${rootDomain}`;
-      if (!whitelist.includes(wildcardDomain)) {
-        whitelist.push(wildcardDomain);
-        browserAPI.storage.sync.set({ whitelist });
-      }
-      warningBar.remove();
-    });
-
-  document.getElementById("close-warning-btn").addEventListener("click", () => {
-    warningBar.remove();
-  });
 }
 
 async function checkDomain() {
+  if (!isHttpUrl(window.location.href)) return;
   const currentDomain = getDomain(window.location.href);
+  const settings = await loadSettings();
 
-  const result = await browserAPI.storage.sync.get(["whitelist"]);
-  const whitelist = result.whitelist || [];
-
-  if (!isWhitelisted(currentDomain, whitelist)) {
-    createWarningBar(currentDomain);
+  if (isWhitelisted(currentDomain, settings.whitelist)) {
+    removeWarningBar();
+  } else {
+    createWarningBar(currentDomain, settings.allowUserWhitelist);
   }
 }
 
@@ -103,9 +90,9 @@ if (document.readyState === "loading") {
   checkDomain();
 }
 
-// Listen for changes to the whitelist
-browserAPI.storage.onChanged.addListener((changes) => {
-  if (changes.whitelist) {
+// React to whitelist changes made by the user or by organization policy
+browserAPI.storage.onChanged.addListener((changes, areaName) => {
+  if (settingsChanged(changes, areaName) && document.body) {
     checkDomain();
   }
 });

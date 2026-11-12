@@ -1,80 +1,96 @@
-async function loadWhitelist() {
-  const result = await browserAPI.storage.sync.get(["whitelist"]);
-  const whitelist = result.whitelist || [];
-  const whitelistElement = document.getElementById("whitelist");
-  whitelistElement.innerHTML = "";
-
-  // Sort the whitelist alphabetically (case-insensitive)
-  whitelist.sort((a, b) =>
+function sortDomains(list) {
+  return [...list].sort((a, b) =>
     a.localeCompare(b, undefined, { sensitivity: "base" }),
   );
+}
 
-  if (whitelist.length === 0) {
-    whitelistElement.innerHTML =
-      '<li class="empty-list">No domains in whitelist</li>';
+function createBadge(className, label) {
+  const badge = document.createElement("span");
+  badge.className = className;
+  badge.textContent = label;
+  return badge;
+}
+
+function renderDomainList(element, domains, { emptyText, onRemove }) {
+  element.textContent = "";
+
+  if (domains.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "empty-list";
+    empty.textContent = emptyText;
+    element.appendChild(empty);
     return;
   }
 
-  whitelist.forEach(function (domain) {
+  sortDomains(domains).forEach(function (domain) {
     const li = document.createElement("li");
 
     const domainEntry = document.createElement("div");
     domainEntry.className = "domain-entry";
-
-    // Text for the domain
-    const domainText = document.createTextNode(domain);
-    domainEntry.appendChild(domainText);
-
-    // Add wildcard badge if it's a wildcard domain
+    domainEntry.appendChild(document.createTextNode(domain));
     if (domain.startsWith("*.")) {
-      const badge = document.createElement("span");
-      badge.className = "wildcard-badge";
-      badge.textContent = "WILDCARD";
-      domainEntry.appendChild(badge);
+      domainEntry.appendChild(createBadge("wildcard-badge", "WILDCARD"));
     }
-
     li.appendChild(domainEntry);
 
-    const removeButton = document.createElement("button");
-    removeButton.textContent = "Remove";
-    removeButton.className = "remove-btn";
-    removeButton.addEventListener("click", function () {
-      removeDomain(domain);
-    });
+    if (onRemove) {
+      const removeButton = document.createElement("button");
+      removeButton.textContent = "Remove";
+      removeButton.className = "remove-btn";
+      removeButton.addEventListener("click", function () {
+        onRemove(domain);
+      });
+      li.appendChild(removeButton);
+    } else {
+      li.appendChild(createBadge("managed-badge", "MANAGED"));
+    }
 
-    li.appendChild(removeButton);
-    whitelistElement.appendChild(li);
+    element.appendChild(li);
   });
+}
+
+async function loadWhitelist() {
+  const settings = await loadSettings();
+
+  // Domains rolled out by the organization: visible, but not editable
+  document.getElementById("managed-section").hidden =
+    settings.managedWhitelist.length === 0;
+  renderDomainList(
+    document.getElementById("managed-whitelist"),
+    settings.managedWhitelist,
+    { emptyText: "" },
+  );
+
+  document.getElementById("user-section").hidden = !settings.allowUserWhitelist;
+  document.getElementById("user-whitelist-locked").hidden =
+    settings.allowUserWhitelist;
+  renderDomainList(document.getElementById("whitelist"), settings.userWhitelist, {
+    emptyText: "No domains in whitelist",
+    onRemove: removeDomain,
+  });
+}
+
+async function addEntry(input) {
+  const entry = normalizeEntry(input);
+  if (!entry) {
+    alert("This is not a valid domain.");
+    return false;
+  }
+  if (!(await addToUserWhitelist(entry))) {
+    alert("This domain is already in your whitelist.");
+    return false;
+  }
+  loadWhitelist();
+  return true;
 }
 
 async function addDomain() {
   const input = document.getElementById("new-domain");
-  let domain = input.value.trim();
-
-  // Basic validation
-  if (!domain) {
+  if (!input.value.trim()) {
     return;
   }
-
-  // Remove protocol if present
-  if (domain.startsWith("http://") || domain.startsWith("https://")) {
-    domain = domain.split("//")[1];
-  }
-
-  // Remove path and query parameters if present
-  domain = domain.split("/")[0];
-
-  const result = await browserAPI.storage.sync.get(["whitelist"]);
-  const whitelist = result.whitelist || [];
-  if (!whitelist.includes(domain)) {
-    whitelist.push(domain);
-    await browserAPI.storage.sync.set({ whitelist: whitelist });
-    input.value = "";
-    loadWhitelist();
-  } else {
-    input.value = "";
-    alert("This domain is already in your whitelist.");
-  }
+  await addEntry(input.value);
+  input.value = "";
 }
 
 async function addCurrentDomain() {
@@ -82,26 +98,14 @@ async function addCurrentDomain() {
     active: true,
     currentWindow: true,
   });
-  if (tabs[0]) {
-    const url = new URL(tabs[0].url);
-    const domain = url.hostname;
-
-    const result = await browserAPI.storage.sync.get(["whitelist"]);
-    const whitelist = result.whitelist || [];
-    if (!whitelist.includes(domain)) {
-      whitelist.push(domain);
-      await browserAPI.storage.sync.set({ whitelist: whitelist });
-      loadWhitelist();
-    } else {
-      alert("This domain is already in your whitelist.");
-    }
+  if (tabs[0] && isHttpUrl(tabs[0].url)) {
+    await addEntry(getDomain(tabs[0].url));
+  } else {
+    alert("The current tab is not a web page.");
   }
 }
 
 async function removeDomain(domain) {
-  const result = await browserAPI.storage.sync.get(["whitelist"]);
-  let whitelist = result.whitelist || [];
-  whitelist = whitelist.filter((d) => d !== domain);
-  await browserAPI.storage.sync.set({ whitelist: whitelist });
+  await removeFromUserWhitelist(domain);
   loadWhitelist();
 }

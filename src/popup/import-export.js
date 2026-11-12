@@ -1,6 +1,6 @@
 async function exportData() {
-  const resultWhiteList = await browserAPI.storage.sync.get(["whitelist"]);
-  const whitelist = resultWhiteList.whitelist || [];
+  // Only the user's own entries; the organization list lives in the policy
+  const whitelist = await getUserWhitelist();
   const resultCountryBlock = await browserAPI.storage.sync.get([
     "blockedCountries",
   ]);
@@ -43,20 +43,13 @@ function importData(event) {
         return;
       }
 
-      const result = await browserAPI.storage.sync.get([
-        "whitelist",
-        "blockedCountries",
-      ]);
+      const result = await browserAPI.storage.sync.get(["blockedCountries"]);
 
-      let whitelist = result.whitelist || [];
+      let whitelist = await getUserWhitelist();
       let countryBlock = result.blockedCountries || [];
 
       // Add unique domains from imported whitelist
-      importedData.whitelist.forEach(function (domain) {
-        if (typeof domain === "string" && !whitelist.includes(domain)) {
-          whitelist.push(domain);
-        }
-      });
+      whitelist = normalizeList([...whitelist, ...importedData.whitelist]);
 
       // Add unique countries from imported countryBlock
       importedData.countryBlock.forEach(function (country) {
@@ -65,10 +58,8 @@ function importData(event) {
         }
       });
 
-      await browserAPI.storage.sync.set({
-        whitelist: whitelist,
-        blockedCountries: countryBlock,
-      });
+      await setUserWhitelist(whitelist);
+      await browserAPI.storage.sync.set({ blockedCountries: countryBlock });
 
       loadWhitelist();
       loadBlockedCountries();
