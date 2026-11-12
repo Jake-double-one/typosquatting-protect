@@ -67,6 +67,15 @@
       "title": "Warning bar",
       "description": "Forces the red warning bar on non-whitelisted pages on or off. If unset, users decide.",
       "type": "boolean"
+    },
+    "warningBarSize": {
+      "title": "Height of the warning bar",
+      "description": "\"slim\" (one small line, default) or \"normal\". If unset, users decide.",
+      "type": "string",
+      "enum": [
+        "slim",
+        "normal"
+      ]
     }
   }
 }

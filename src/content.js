@@ -16,11 +16,12 @@ function createButton(id, label, onClick) {
   return button;
 }
 
-async function createWarningBar(domain, allowUserWhitelist, homograph) {
+async function createWarningBar(domain, allowUserWhitelist, homograph, size) {
   removeWarningBar();
 
   const bar = document.createElement("div");
   bar.id = "whitelist-warning-bar";
+  if (size === "slim") bar.classList.add("slim");
   warningBar = bar;
 
   const text = document.createElement("span");
@@ -256,6 +257,7 @@ async function checkDomain() {
         currentDomain,
         settings.allowUserWhitelist,
         analyzeHomograph(currentDomain, settings.whitelist),
+        settings.warningBarSize,
       );
     } else {
       removeWarningBar();

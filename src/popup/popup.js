@@ -82,6 +82,13 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
+  // Height of the warning bar
+  document
+    .getElementById("warning-bar-size")
+    .addEventListener("change", function () {
+      browserAPI.storage.sync.set({ warningBarSize: this.value });
+    });
+
   // Load countries selector
   loadCountries();
 
@@ -130,6 +137,10 @@ async function loadToggleState() {
     toggle.disabled = settings.locked[key];
     document.getElementById(noteId).hidden = !settings.locked[key];
   }
+
+  const barSize = document.getElementById("warning-bar-size");
+  barSize.value = settings.warningBarSize;
+  barSize.disabled = settings.locked.warningBarSize;
 
   const provider = document.getElementById("geo-provider");
   provider.value = settings.geoProvider;

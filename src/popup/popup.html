@@ -144,6 +144,8 @@
       .toggle {
         position: relative;
         display: inline-block;
+        flex-shrink: 0;
+        margin-left: 10px;
         width: 50px;
         height: 24px;
       }
@@ -222,6 +224,13 @@
       }
       .github-link:hover {
         background-color: #3367d6;
+      }
+      .bar-size-row {
+        margin-top: 4px;
+      }
+      .bar-size-row select {
+        font-size: 12px;
+        padding: 1px 4px;
       }
       .managed-badge {
         background-color: #6c757d;
@@ -320,6 +329,17 @@
           <strong data-i18n="warningBarTitle">Warning Bar</strong>
           <div data-i18n="warningBarText">
             Show a red bar on non-whitelisted pages
+          </div>
+          <div class="bar-size-row">
+            <label for="warning-bar-size" data-i18n="warningBarSizeLabel">
+              Height:
+            </label>
+            <select id="warning-bar-size">
+              <option value="slim" data-i18n="warningBarSizeSlim">Slim</option>
+              <option value="normal" data-i18n="warningBarSizeNormal">
+                Normal
+              </option>
+            </select>
           </div>
           <div
             class="managed-note"

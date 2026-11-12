@@ -268,5 +268,14 @@
   },
   "warningBarText": {
     "message": "Show a red bar on non-whitelisted pages"
+  },
+  "warningBarSizeLabel": {
+    "message": "Height:"
+  },
+  "warningBarSizeSlim": {
+    "message": "Slim"
+  },
+  "warningBarSizeNormal": {
+    "message": "Normal"
   }
 }

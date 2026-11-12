@@ -98,6 +98,7 @@ Administrators can set these through the generated templates (see `src/managed_s
 | `allowUserWhitelist` | boolean | `false`: users cannot whitelist their own domains |
 | `enablePreemptiveChecks` | boolean | Forces the confirmation page on or off |
 | `enableWarningBar` | boolean | Forces the warning bar on or off |
+| `warningBarSize` | string | Height of the warning bar: `slim` or `normal` |
 | `protectedEmailDomains` | list of strings | Company e-mail domains for the sign-in guard |
 | `protectedLogins` | list of strings | Optional, per user: further sign-in names for the sign-in guard |
 | `noticeText` | string | Note shown on the confirmation page |

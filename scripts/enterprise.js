@@ -92,6 +92,25 @@ const POLICIES = [
     },
   },
   {
+    name: "warningBarSize",
+    type: "enum",
+    options: ["slim", "normal"],
+    en: {
+      title: "Height of the warning bar",
+      enumLabel: "Height",
+      optionLabels: ["Slim (one small line)", "Normal"],
+      explain:
+        "Sets the height of the red warning bar on non-whitelisted pages; users cannot change it.\n\nNot configured: users decide (default: slim).",
+    },
+    de: {
+      title: "Höhe der Warnleiste",
+      enumLabel: "Höhe",
+      optionLabels: ["Schmal (eine kleine Zeile)", "Normal"],
+      explain:
+        "Legt die Höhe der roten Warnleiste auf nicht erlaubten Seiten fest; Benutzer können sie nicht ändern.\n\nNicht konfiguriert: Benutzer entscheiden selbst (Standard: schmal).",
+    },
+  },
+  {
     name: "enableCountryBlock",
     type: "boolean",
     en: {

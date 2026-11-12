@@ -3,6 +3,8 @@
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
   background-color: #ff5252 !important;
   color: white !important;
   padding: 10px 20px !important;
@@ -105,4 +107,36 @@
 
 #whitelist-login-warning span {
   color: white !important;
+}
+
+/* Slim variant: one line, small text */
+#whitelist-warning-bar.slim {
+  padding: 2px 10px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  gap: 6px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+#whitelist-warning-bar.slim .warning-text {
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#whitelist-warning-bar.slim #whitelist-btn,
+#whitelist-warning-bar.slim #wildcard-whitelist-btn {
+  padding: 0 8px !important;
+  margin: 0 !important;
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+#whitelist-warning-bar.slim #close-warning-btn {
+  font-size: 15px !important;
+  padding: 0 3px !important;
+  flex-shrink: 0 !important;
 }

@@ -268,5 +268,14 @@
   },
   "warningBarText": {
     "message": "Rote Leiste auf Seiten anzeigen, die nicht auf der Whitelist stehen"
+  },
+  "warningBarSizeLabel": {
+    "message": "Höhe:"
+  },
+  "warningBarSizeSlim": {
+    "message": "Schmal"
+  },
+  "warningBarSizeNormal": {
+    "message": "Normal"
   }
 }

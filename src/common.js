@@ -374,6 +374,10 @@ function parseUserBlockedCountries(list) {
 const GEO_PROVIDERS = ["ipwhois", "geojs", "ipapi"];
 const DEFAULT_GEO_PROVIDER = "ipwhois";
 
+// Heights of the warning bar
+const WARNING_BAR_SIZES = ["slim", "normal"];
+const DEFAULT_WARNING_BAR_SIZE = "slim";
+
 // Effective settings: organization policy combined with the user's own.
 async function loadSettings() {
   const [policy, syncData] = await Promise.all([
@@ -390,7 +394,14 @@ async function loadSettings() {
     enableCountryBlock: typeof policy.enableCountryBlock === "boolean",
     enableWarningBar: typeof policy.enableWarningBar === "boolean",
     geoProvider: GEO_PROVIDERS.includes(policy.geoProvider),
+    warningBarSize: WARNING_BAR_SIZES.includes(policy.warningBarSize),
   };
+  let warningBarSize = locked.warningBarSize
+    ? policy.warningBarSize
+    : syncData.warningBarSize;
+  if (!WARNING_BAR_SIZES.includes(warningBarSize)) {
+    warningBarSize = DEFAULT_WARNING_BAR_SIZE;
+  }
   let geoProvider = locked.geoProvider
     ? policy.geoProvider
     : syncData.geoProvider;
@@ -455,6 +466,7 @@ async function loadSettings() {
     enableWarningBar: locked.enableWarningBar
       ? policy.enableWarningBar
       : syncData.enableWarningBar !== false,
+    warningBarSize,
     geoProvider,
     managedBlockedCountries,
     userBlockedCountries,
@@ -478,6 +490,7 @@ function settingsChanged(changes, areaName) {
       key === "enablePreemptiveChecks" ||
       key === "enableCountryBlock" ||
       key === "enableWarningBar" ||
+      key === "warningBarSize" ||
       key === "geoProvider" ||
       key === "blockedCountries",
   );
