@@ -72,6 +72,16 @@ document.addEventListener("DOMContentLoaded", function () {
       browserAPI.storage.sync.set({ geoProvider: this.value });
     });
 
+  // Warning bar toggle
+  document
+    .getElementById("warning-bar-toggle")
+    .addEventListener("change", function () {
+      browserAPI.runtime.sendMessage({
+        action: "toggleWarningBar",
+        enabled: this.checked,
+      });
+    });
+
   // Load countries selector
   loadCountries();
 
@@ -112,6 +122,7 @@ async function loadToggleState() {
   const toggles = [
     ["preemptive-check-toggle", "preemptive-managed", "enablePreemptiveChecks"],
     ["country-block-toggle", "country-managed", "enableCountryBlock"],
+    ["warning-bar-toggle", "warning-bar-managed", "enableWarningBar"],
   ];
   for (const [toggleId, noteId, key] of toggles) {
     const toggle = document.getElementById(toggleId);

@@ -15,7 +15,7 @@
     "message": "$1 freigeben"
   },
   "barClose": {
-    "message": "Schließen"
+    "message": "Für diese Website ausblenden"
   },
   "confirmPageTitle": {
     "message": "Domain-Sicherheitsprüfung"
@@ -262,5 +262,11 @@
   },
   "confirmSuspicious": {
     "message": "Vorsicht: $1 sieht aus wie $2 von der Whitelist, ist aber eine andere Domain. Trotzdem hinzufügen?"
+  },
+  "warningBarTitle": {
+    "message": "Warnleiste"
+  },
+  "warningBarText": {
+    "message": "Rote Leiste auf Seiten anzeigen, die nicht auf der Whitelist stehen"
   }
 }

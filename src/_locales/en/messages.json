@@ -15,7 +15,7 @@
     "message": "Whitelist $1"
   },
   "barClose": {
-    "message": "Close"
+    "message": "Hide for this website"
   },
   "confirmPageTitle": {
     "message": "Domain Safety Check"
@@ -262,5 +262,11 @@
   },
   "confirmSuspicious": {
     "message": "Caution: $1 looks like $2 from the whitelist, but it is a different domain. Add it anyway?"
+  },
+  "warningBarTitle": {
+    "message": "Warning Bar"
+  },
+  "warningBarText": {
+    "message": "Show a red bar on non-whitelisted pages"
   }
 }

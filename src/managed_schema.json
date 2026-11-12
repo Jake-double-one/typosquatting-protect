@@ -62,6 +62,11 @@
       "items": {
         "type": "string"
       }
+    },
+    "enableWarningBar": {
+      "title": "Warning bar",
+      "description": "Forces the red warning bar on non-whitelisted pages on or off. If unset, users decide.",
+      "type": "boolean"
     }
   }
 }

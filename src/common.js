@@ -388,6 +388,7 @@ async function loadSettings() {
   const locked = {
     enablePreemptiveChecks: typeof policy.enablePreemptiveChecks === "boolean",
     enableCountryBlock: typeof policy.enableCountryBlock === "boolean",
+    enableWarningBar: typeof policy.enableWarningBar === "boolean",
     geoProvider: GEO_PROVIDERS.includes(policy.geoProvider),
   };
   let geoProvider = locked.geoProvider
@@ -451,6 +452,9 @@ async function loadSettings() {
     enableCountryBlock: locked.enableCountryBlock
       ? policy.enableCountryBlock
       : syncData.enableCountryBlock !== false,
+    enableWarningBar: locked.enableWarningBar
+      ? policy.enableWarningBar
+      : syncData.enableWarningBar !== false,
     geoProvider,
     managedBlockedCountries,
     userBlockedCountries,
@@ -473,6 +477,7 @@ function settingsChanged(changes, areaName) {
       isWhitelistKey(key) ||
       key === "enablePreemptiveChecks" ||
       key === "enableCountryBlock" ||
+      key === "enableWarningBar" ||
       key === "geoProvider" ||
       key === "blockedCountries",
   );

@@ -78,6 +78,20 @@ const POLICIES = [
     },
   },
   {
+    name: "enableWarningBar",
+    type: "boolean",
+    en: {
+      title: "Force the warning bar on non-whitelisted pages",
+      explain:
+        "Enabled: the red warning bar is always shown on non-whitelisted pages. Users can still close it for a website; it then stays hidden for that website until the tab is closed.\n\nDisabled: the warning bar is never shown. The confirmation page and the sign-in warning are not affected.\n\nNot configured: users decide.",
+    },
+    de: {
+      title: "Warnleiste auf nicht erlaubten Seiten erzwingen",
+      explain:
+        "Aktiviert: Die rote Warnleiste erscheint immer auf nicht erlaubten Seiten. Benutzer können sie für eine Website schließen; sie bleibt dann für diese Website ausgeblendet, bis der Tab geschlossen wird.\n\nDeaktiviert: Die Warnleiste erscheint nie. Bestätigungsseite und Warnung bei Anmeldung sind davon nicht betroffen.\n\nNicht konfiguriert: Benutzer entscheiden selbst.",
+    },
+  },
+  {
     name: "enableCountryBlock",
     type: "boolean",
     en: {

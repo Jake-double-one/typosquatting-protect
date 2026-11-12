@@ -22,6 +22,30 @@ async function allowDomainForSession(domain) {
   }
 }
 
+// Warning bars the user closed: { tabId: [domain, ...] }. A closed bar stays
+// hidden for that website until the tab or the browser is closed.
+async function getDismissedBars() {
+  const result = await browserAPI.storage.session.get(["dismissedBars"]);
+  return result.dismissedBars || {};
+}
+
+async function dismissBar(tabId, domain) {
+  const dismissed = await getDismissedBars();
+  const domains = dismissed[tabId] || [];
+  if (domain && !domains.includes(domain)) {
+    dismissed[tabId] = [...domains, domain];
+    await browserAPI.storage.session.set({ dismissedBars: dismissed });
+  }
+}
+
+browserAPI.tabs.onRemoved.addListener(async (tabId) => {
+  const dismissed = await getDismissedBars();
+  if (tabId in dismissed) {
+    delete dismissed[tabId];
+    await browserAPI.storage.session.set({ dismissedBars: dismissed });
+  }
+});
+
 browserAPI.webNavigation.onCommitted.addListener((details) => {
   // Only check main frame navigations
   if (details.frameId === 0) {
@@ -294,8 +318,21 @@ async function handleMessage(message, sender) {
         rootDomain: getRootDomain(message.hostname),
         similarTo: findSimilarWhitelisted(message.hostname, settings.whitelist),
         suspicion: findSuspicion(message.hostname, settings.whitelist),
+        barDismissed: Boolean(
+          sender.tab &&
+            ((await getDismissedBars())[sender.tab.id] || []).includes(
+              message.hostname,
+            ),
+        ),
       };
     }
+
+    case "dismissBar":
+      // Only for the page's own domain, as reported by the browser
+      if (sender.tab && isHttpUrl(sender.url)) {
+        await dismissBar(sender.tab.id, getDomain(sender.url));
+      }
+      return {};
 
     case "confirmationInfo": {
       if (!fromConfirmation) return {};
@@ -340,12 +377,14 @@ async function handleMessage(message, sender) {
       return {};
 
     case "togglePreemptiveChecks":
-    case "toggleCountryBlock": {
+    case "toggleCountryBlock":
+    case "toggleWarningBar": {
       if (!fromExtensionPage) return {};
-      const key =
-        message.action === "togglePreemptiveChecks"
-          ? "enablePreemptiveChecks"
-          : "enableCountryBlock";
+      const key = {
+        togglePreemptiveChecks: "enablePreemptiveChecks",
+        toggleCountryBlock: "enableCountryBlock",
+        toggleWarningBar: "enableWarningBar",
+      }[message.action];
       const settings = await loadSettings();
       if (!settings.locked[key]) {
         await browserAPI.storage.sync.set({ [key]: Boolean(message.enabled) });

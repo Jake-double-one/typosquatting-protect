@@ -56,6 +56,13 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
   // No one-click whitelisting for domains that look like a trusted one
   const suspicious = Boolean(homograph || (info && info.similarTo));
 
+  // The user closed the bar for this website in this tab. Suspicious
+  // domains show it again on every page.
+  if (info && info.barDismissed && !suspicious) {
+    if (warningBar === bar) warningBar = null;
+    return;
+  }
+
   if (allowUserWhitelist && !suspicious) {
     bar.appendChild(
       createButton("whitelist-btn", t("barWhitelist"), async () => {
@@ -79,7 +86,10 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
     }
   }
 
-  const closeButton = createButton("close-warning-btn", "×", removeWarningBar);
+  const closeButton = createButton("close-warning-btn", "×", () => {
+    removeWarningBar();
+    browserAPI.runtime.sendMessage({ action: "dismissBar" }).catch(() => {});
+  });
   closeButton.title = t("barClose");
   bar.appendChild(closeButton);
 
@@ -241,11 +251,15 @@ async function checkDomain() {
     protectedEmailDomains = settings.protectedEmailDomains;
     scanFields();
     setTimeout(scanFields, 1500);
-    createWarningBar(
-      currentDomain,
-      settings.allowUserWhitelist,
-      analyzeHomograph(currentDomain, settings.whitelist),
-    );
+    if (settings.enableWarningBar) {
+      createWarningBar(
+        currentDomain,
+        settings.allowUserWhitelist,
+        analyzeHomograph(currentDomain, settings.whitelist),
+      );
+    } else {
+      removeWarningBar();
+    }
   }
 }
 

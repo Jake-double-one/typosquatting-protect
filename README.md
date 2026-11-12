@@ -11,7 +11,7 @@ can be rolled out and configured centrally through Group Policy.
 **Protection**
 
 - **Confirmation page**: non-whitelisted domains are intercepted before they load; you choose to continue once, whitelist, or leave
-- **Warning bar**: a red banner stays visible on non-whitelisted pages
+- **Warning bar**: a red banner on non-whitelisted pages; closing it hides it for that website until the tab is closed, and it can be turned off entirely
 - **Lookalike detection**: warns when a domain imitates a whitelisted one, using characters from other alphabets (`аmazon.de` with a Cyrillic "а"), typos (`sharepoimt.com`), visual tricks (`rnicrosoft.com`), other endings (`sharepoint.co`) or the trusted name as a subdomain (`sharepoint.com.evil.net`). Such domains cannot be whitelisted with one click
 - **Sign-in guard**: marks the field red and warns when a company e-mail address is typed on a non-whitelisted page
 - **Country blocking**: optionally looks up where a non-whitelisted domain is hosted and blocks selected countries
@@ -97,6 +97,7 @@ Administrators can set these through the generated templates (see `src/managed_s
 | `managedWhitelist` | list of strings | Domains that are always whitelisted |
 | `allowUserWhitelist` | boolean | `false`: users cannot whitelist their own domains |
 | `enablePreemptiveChecks` | boolean | Forces the confirmation page on or off |
+| `enableWarningBar` | boolean | Forces the warning bar on or off |
 | `protectedEmailDomains` | list of strings | Company e-mail domains for the sign-in guard |
 | `protectedLogins` | list of strings | Optional, per user: further sign-in names for the sign-in guard |
 | `noticeText` | string | Note shown on the confirmation page |

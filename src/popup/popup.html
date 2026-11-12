@@ -129,8 +129,8 @@
       .toggle-container {
         display: flex;
         align-items: center;
-        margin: 15px 0;
-        padding: 10px;
+        margin: 8px 0;
+        padding: 8px 10px;
         background-color: #f8f9fa;
         border-radius: 4px;
         border: 1px solid #eee;
@@ -315,6 +315,26 @@
         </label>
       </div>
 
+      <div class="toggle-container">
+        <div class="toggle-label">
+          <strong data-i18n="warningBarTitle">Warning Bar</strong>
+          <div data-i18n="warningBarText">
+            Show a red bar on non-whitelisted pages
+          </div>
+          <div
+            class="managed-note"
+            id="warning-bar-managed"
+            data-i18n="managedByOrg"
+            hidden
+          >
+            Managed by your organization
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="warning-bar-toggle" checked />
+          <span class="slider"></span>
+        </label>
+      </div>
       <div id="managed-section" hidden>
         <h3 class="section-title" data-i18n="managedHeading">
           Managed by your organization:
