@@ -383,6 +383,13 @@ function main() {
   fs.writeFileSync(path.join(policyDir, "en-US", `${ADMX_NAME}.adml`), buildAdml("en"));
   fs.writeFileSync(path.join(policyDir, "de-DE", `${ADMX_NAME}.adml`), buildAdml("de"));
 
+  // Script that reads each user's sign-in names from Active Directory
+  const loginScript = fs
+    .readFileSync(path.join(__dirname, "Set-ProtectedLogins.template.ps1"), "utf8")
+    .replace("{{EXTENSION_ID}}", extensionId)
+    .replace(/\r?\n/g, "\r\n");
+  fs.writeFileSync(path.join(OUT_DIR, "Set-ProtectedLogins.ps1"), loginScript);
+
   const values = [
     "Domain Whitelist Protector - values for the Group Policy",
     "",
@@ -419,6 +426,7 @@ function main() {
   console.log("  update.xml                       for the web server");
   console.log("  PolicyDefinitions/               Group Policy templates");
   console.log("  gpo-values.txt                   values to enter in the GPO");
+  console.log("  Set-ProtectedLogins.ps1          provides users' sign-in names (optional)");
 }
 
 main();

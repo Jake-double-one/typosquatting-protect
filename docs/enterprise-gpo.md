@@ -41,6 +41,7 @@ Danach liegt in `dist/enterprise`:
 | `update.xml` | Update-Beschreibung für den Webserver |
 | `PolicyDefinitions/` | GPO-Vorlagen (`.admx`, `.adml` in Deutsch und Englisch) |
 | `gpo-values.txt` | Extension-ID und die Werte, die du in die GPO einträgst |
+| `Set-ProtectedLogins.ps1` | Optional: liefert der Erweiterung Anmeldename und E-Mail-Adressen der Benutzer |
 
 ### 2. Erweiterung packen
 
@@ -139,11 +140,46 @@ E-Mail-Adresse in ein Feld auf einer nicht freigegebenen Seite eingibt: Das
 Feld und die Passwortfelder der Seite werden rot markiert, und ein Hinweis
 erscheint direkt am Feld. Der Vergleich findet nur im Browser statt.
 
-Dafür muss die Erweiterung die Kennungen des jeweiligen Benutzers kennen. Der
-Browser kann sie nicht selbst auslesen; die GPO schreibt sie pro Benutzer in
-die Richtlinie der Erweiterung. Das geht über die
-Gruppenrichtlinien-Einstellungen, weil nur dort Variablen wie `%LogonUser%`
-aufgelöst werden.
+Dafür muss die Erweiterung die Kennungen des jeweiligen Benutzers kennen:
+Anmeldename und E-Mail-Adresse, auch wenn beide unterschiedlich aufgebaut sind
+(zum Beispiel `MustermannM` und `max.mustermann@example.com`). Der Browser
+kann sie nicht selbst auslesen; sie werden pro Benutzer in die Richtlinie der
+Erweiterung geschrieben (`protectedLogins`). Dafür gibt es zwei Wege.
+
+### Weg A: Skript liest alles aus dem Active Directory (empfohlen)
+
+`dist/enterprise/Set-ProtectedLogins.ps1` trägt für jeden angemeldeten
+Domänenbenutzer automatisch ein:
+
+- Anmeldename (`MustermannM`) und `DOMÄNE\MustermannM`
+- E-Mail-Adresse (`mail`)
+- Benutzerprinzipalname (UPN)
+- weitere E-Mail-Aliase (`proxyAddresses`); abschaltbar mit `-SkipAliases`
+
+Das Skript muss als SYSTEM laufen, weil normale Benutzer unter
+`HKCU\Software\Policies` nicht schreiben dürfen.
+
+1. `Set-ProtectedLogins.ps1` auf eine Freigabe legen, die alle Computer lesen
+   können, zum Beispiel `\\<domäne>\NETLOGON\`.
+2. In der GPO unter *Computerkonfiguration → Einstellungen →
+   Systemsteuerungseinstellungen → Geplante Aufgaben* eine neue geplante
+   Aufgabe („Mindestens Windows 7“) anlegen:
+
+   | Feld | Wert |
+   | --- | --- |
+   | Benutzerkonto | `NT AUTHORITY\SYSTEM` |
+   | Trigger | Bei Anmeldung, jeder Benutzer, Verzögerung 30 Sekunden |
+   | Aktion | Programm starten: `powershell.exe` |
+   | Argumente | `-NoProfile -ExecutionPolicy Bypass -File "\\<domäne>\NETLOGON\Set-ProtectedLogins.ps1"` |
+
+Das Skript enthält die Extension-ID. Nach einem Wechsel der ID muss es neu
+erzeugt werden.
+
+### Weg B: Feste Muster ohne Skript
+
+Reicht der Anmeldename oder lässt sich die E-Mail-Adresse aus ihm ableiten,
+genügen Registrierungselemente in den Gruppenrichtlinien-Einstellungen, weil
+dort Variablen wie `%LogonUser%` aufgelöst werden.
 
 In der GPO unter *Benutzerkonfiguration → Einstellungen → Windows-Einstellungen
 → Registrierung* pro Kennung ein Registrierungselement anlegen
@@ -158,8 +194,6 @@ In der GPO unter *Benutzerkonfiguration → Einstellungen → Windows-Einstellun
 | Werttyp | `REG_SZ` |
 | Wertdaten | die Kennung, siehe unten |
 
-Übliche Wertdaten:
-
 | Kennung | Wertdaten |
 | --- | --- |
 | Anmeldename | `%LogonUser%` |
@@ -167,18 +201,14 @@ In der GPO unter *Benutzerkonfiguration → Einstellungen → Windows-Einstellun
 | E-Mail-Adresse, wenn sie dem Anmeldenamen entspricht | `%LogonUser%@example.com` |
 
 Für Chrome und Edge je eigene Elemente mit dem jeweiligen Schlüsselpfad
-anlegen.
+anlegen. Weg A und Weg B nicht mischen: Das Skript ersetzt die Liste jedes Mal
+vollständig.
 
-Weicht die E-Mail-Adresse vom Anmeldenamen ab (etwa
-`vorname.nachname@example.com`), gibt es dafür keine fertige Variable. Dann
-muss ein Anmeldeskript die Adresse aus dem Active Directory lesen und in
-denselben Schlüssel schreiben. Da normale Benutzer unter
-`HKCU\Software\Policies` nicht schreiben dürfen, muss das Skript mit
-erhöhten Rechten laufen, zum Beispiel als geplante Aufgabe über die GPO.
+### Prüfen
 
 Groß- und Kleinschreibung spielt beim Vergleich keine Rolle. Unter
-`chrome://policy` bzw. `edge://policy` siehst du, ob `protectedLogins` beim
-Benutzer ankommt.
+`chrome://policy` bzw. `edge://policy` muss `protectedLogins` mit den Kennungen
+des angemeldeten Benutzers erscheinen, zusätzlich zur Firmen-Whitelist.
 
 ## Im Alltag
 
