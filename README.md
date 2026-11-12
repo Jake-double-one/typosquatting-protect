@@ -49,6 +49,8 @@ The interface is available in English and German and follows the browser languag
 4. You can continue without whitelisting (remembered until the browser closes), whitelist the domain or `*.domain`, or not load the page.
 5. On non-whitelisted pages the warning bar stays visible and the sign-in guard watches the input fields.
 
+Hiding the warning bar only hides the bar. Whether a user closes it for a website or it is switched off in the popup or by policy, the confirmation page, the lookalike warnings on it and the sign-in guard keep working.
+
 The similarity and lookalike checks compare the domain with your whitelist inside the browser. They are hints, not proof: `bahn.com` is reported as similar to `bahn.de`, for example.
 
 ## Requirements

@@ -135,6 +135,11 @@ beide Browser nutzt, trage die Liste in beiden Ordnern ein.
 
 Nicht konfigurierte Einstellungen bleiben in der Hand der Benutzer.
 
+Das Ausblenden der Warnleiste betrifft nur die Leiste selbst. Ob ein Benutzer
+sie für eine Website schließt oder sie per Richtlinie abgeschaltet ist: Die
+Bestätigungsseite mit ihren Ähnlichkeitswarnungen und die Warnung bei Eingabe
+der Firmen-Anmeldung bleiben aktiv.
+
 ## Warnung bei Eingabe der Firmen-Anmeldung
 
 Die Erweiterung kann warnen, sobald jemand eine Firmen-E-Mail-Adresse in ein
