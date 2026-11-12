@@ -64,6 +64,14 @@ async function loadWhitelist() {
   document.getElementById("user-section").hidden = !settings.allowUserWhitelist;
   document.getElementById("user-whitelist-locked").hidden =
     settings.allowUserWhitelist;
+  const redundant = settings.allowUserWhitelist
+    ? findRedundantEntries(settings.userWhitelist, settings.managedWhitelist)
+    : [];
+  document.getElementById("redundant-note").hidden = redundant.length === 0;
+  document.getElementById("redundant-text").textContent = t("redundantNote", [
+    String(redundant.length),
+  ]);
+
   renderDomainList(document.getElementById("whitelist"), settings.userWhitelist, {
     emptyText: t("emptyWhitelist"),
     onRemove: removeDomain,
@@ -103,6 +111,19 @@ async function addCurrentDomain() {
   } else {
     alert(t("alertNotWebPage"));
   }
+}
+
+// Removes entries that other entries already cover; the protection is unchanged
+async function cleanUpRedundantEntries() {
+  const settings = await loadSettings();
+  const redundant = findRedundantEntries(
+    settings.userWhitelist,
+    settings.managedWhitelist,
+  );
+  await setUserWhitelist(
+    settings.userWhitelist.filter((entry) => !redundant.includes(entry)),
+  );
+  loadWhitelist();
 }
 
 async function removeDomain(domain) {

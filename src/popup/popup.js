@@ -14,6 +14,13 @@ document.addEventListener("DOMContentLoaded", function () {
     addDomain();
   });
 
+  // Remove entries that are covered by other entries
+  document
+    .getElementById("redundant-clean")
+    .addEventListener("click", function () {
+      cleanUpRedundantEntries();
+    });
+
   // Add current domain button
   document.getElementById("add-current").addEventListener("click", function () {
     addCurrentDomain();
@@ -56,6 +63,13 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("country-block-toggle")
     .addEventListener("change", function () {
       toggleCountryBlock(this.checked);
+    });
+
+  // Lookup service for country checks
+  document
+    .getElementById("geo-provider")
+    .addEventListener("change", function () {
+      browserAPI.storage.sync.set({ geoProvider: this.value });
     });
 
   // Load countries selector
@@ -105,6 +119,15 @@ async function loadToggleState() {
     toggle.disabled = settings.locked[key];
     document.getElementById(noteId).hidden = !settings.locked[key];
   }
+
+  const provider = document.getElementById("geo-provider");
+  provider.value = settings.geoProvider;
+  provider.disabled = settings.locked.geoProvider;
+  document.getElementById("geo-provider-managed").hidden =
+    !settings.locked.geoProvider;
+  document.getElementById("geo-provider-info").textContent = t(
+    `geoProviderInfo_${settings.geoProvider}`,
+  );
 }
 
 function togglePreemptiveChecks(enabled) {

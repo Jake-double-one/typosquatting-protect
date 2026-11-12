@@ -30,7 +30,8 @@ const BROWSERS = [
   },
 ];
 
-// name: policy name in managed_schema.json; type: "list" or "boolean"
+// name: policy name in managed_schema.json;
+// type: "list", "boolean", "text" or "enum"
 const POLICIES = [
   {
     name: "managedWhitelist",
@@ -82,12 +83,55 @@ const POLICIES = [
     en: {
       title: "Force country checks",
       explain:
-        "Enabled: the country of non-whitelisted domains is always looked up. Note that this sends the domain name to ip-api.com over an unencrypted connection.\n\nDisabled: no country lookups, no requests to ip-api.com.\n\nNot configured: users decide.",
+        "Enabled: the country of non-whitelisted domains is always looked up through the selected lookup service.\n\nDisabled: no country lookups, no requests to lookup services.\n\nNot configured: users decide.",
     },
     de: {
       title: "Länderprüfung erzwingen",
       explain:
-        "Aktiviert: Für nicht erlaubte Domains wird immer das Herkunftsland abgefragt. Achtung: Dabei wird der Domainname unverschlüsselt an ip-api.com gesendet.\n\nDeaktiviert: Keine Länderabfrage, keine Anfragen an ip-api.com.\n\nNicht konfiguriert: Benutzer entscheiden selbst.",
+        "Aktiviert: Für nicht erlaubte Domains wird immer das Herkunftsland über den gewählten Abfragedienst abgefragt.\n\nDeaktiviert: Keine Länderabfrage, keine Anfragen an Abfragedienste.\n\nNicht konfiguriert: Benutzer entscheiden selbst.",
+    },
+  },
+  {
+    name: "noticeText",
+    type: "text",
+    en: {
+      title: "Note on the confirmation page",
+      textLabel: "Text",
+      explain:
+        "A text shown to users on the confirmation page for non-whitelisted domains, for example whom to contact when in doubt.\n\nExample: If unsure, call the IT help desk on extension 123.",
+    },
+    de: {
+      title: "Hinweistext auf der Bestätigungsseite",
+      textLabel: "Text",
+      explain:
+        "Ein Text, der Benutzern auf der Bestätigungsseite für nicht erlaubte Domains angezeigt wird, zum Beispiel an wen sie sich im Zweifel wenden sollen.\n\nBeispiel: Im Zweifel bitte den IT-Helpdesk unter Durchwahl 123 anrufen.",
+    },
+  },
+  {
+    name: "geoProvider",
+    type: "enum",
+    options: ["ipwhois", "geojs", "ipapi"],
+    en: {
+      title: "Lookup service for country checks",
+      enumLabel: "Service",
+      optionLabels: [
+        "ipwho.is (encrypted)",
+        "geojs.io (encrypted)",
+        "ip-api.com (not encrypted)",
+      ],
+      explain:
+        "Sets which service is used to look up the country of non-whitelisted domains; users cannot change it.\n\nThe encrypted services first resolve the domain through Google Public DNS (dns.google) and then send the IP address to the service. ip-api.com receives the domain name over an unencrypted connection.\n\nNot configured: users decide (default: ipwho.is). Check the terms of use of the service before using it commercially.",
+    },
+    de: {
+      title: "Abfragedienst für die Länderprüfung",
+      enumLabel: "Dienst",
+      optionLabels: [
+        "ipwho.is (verschlüsselt)",
+        "geojs.io (verschlüsselt)",
+        "ip-api.com (unverschlüsselt)",
+      ],
+      explain:
+        "Legt fest, über welchen Dienst das Herkunftsland nicht erlaubter Domains abgefragt wird; Benutzer können das nicht ändern.\n\nDie verschlüsselten Dienste lösen die Domain zuerst über Google Public DNS (dns.google) auf und senden dann die IP-Adresse an den Dienst. ip-api.com erhält den Domainnamen über eine unverschlüsselte Verbindung.\n\nNicht konfiguriert: Benutzer entscheiden selbst (Standard: ipwho.is). Bitte vor gewerblicher Nutzung die Nutzungsbedingungen des Dienstes prüfen.",
     },
   },
   {
@@ -170,6 +214,20 @@ function buildAdmx(extensionId) {
         policies.push(
           `    <policy ${common} presentation="$(presentation.${id})" key="${policyKey}\\${policy.name}">\n${parents}\n      <elements>\n        <list id="${id}_List" valuePrefix="" />\n      </elements>\n    </policy>`,
         );
+      } else if (policy.type === "enum") {
+        const items = policy.options
+          .map(
+            (option) =>
+              `          <item displayName="$(string.${id}_${option})">\n            <value>\n              <string>${option}</string>\n            </value>\n          </item>`,
+          )
+          .join("\n");
+        policies.push(
+          `    <policy ${common} presentation="$(presentation.${id})" key="${policyKey}">\n${parents}\n      <elements>\n        <enum id="${id}_Enum" valueName="${policy.name}" required="true">\n${items}\n        </enum>\n      </elements>\n    </policy>`,
+        );
+      } else if (policy.type === "text") {
+        policies.push(
+          `    <policy ${common} presentation="$(presentation.${id})" key="${policyKey}">\n${parents}\n      <elements>\n        <text id="${id}_Text" valueName="${policy.name}" required="true" maxLength="1000" />\n      </elements>\n    </policy>`,
+        );
       } else {
         policies.push(
           `    <policy ${common} key="${policyKey}" valueName="${policy.name}">\n${parents}\n      <enabledValue>\n        <decimal value="1" />\n      </enabledValue>\n      <disabledValue>\n        <decimal value="0" />\n      </disabledValue>\n    </policy>`,
@@ -217,6 +275,19 @@ function buildAdml(language) {
     const id = pascal(policy.name);
     strings.push([id, policy[language].title]);
     strings.push([`${id}_Explain`, policy[language].explain]);
+    if (policy.type === "enum") {
+      policy.options.forEach((option, index) => {
+        strings.push([`${id}_${option}`, policy[language].optionLabels[index]]);
+      });
+      presentations.push(
+        `      <presentation id="${id}">\n        <dropdownList refId="${id}_Enum" noSort="true" defaultItem="0">${xml(policy[language].enumLabel)}</dropdownList>\n      </presentation>`,
+      );
+    }
+    if (policy.type === "text") {
+      presentations.push(
+        `      <presentation id="${id}">\n        <textBox refId="${id}_Text">\n          <label>${xml(policy[language].textLabel)}</label>\n        </textBox>\n      </presentation>`,
+      );
+    }
     if (policy.type === "list") {
       presentations.push(
         `      <presentation id="${id}">\n        <listBox refId="${id}_List">${xml(policy[language].listLabel)}</listBox>\n      </presentation>`,

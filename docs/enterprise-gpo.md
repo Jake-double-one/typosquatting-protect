@@ -125,7 +125,9 @@ beide Browser nutzt, trage die Liste in beiden Ordnern ein.
 | Firmen-Whitelist | Domains, die für alle immer erlaubt sind |
 | Benutzer dürfen eigene Domains erlauben | Deaktiviert: nur die Firmen-Whitelist gilt. Andere Seiten lassen sich nach der Warnung weiterhin öffnen, aber nicht dauerhaft erlauben |
 | Bestätigungsseite für nicht erlaubte Domains erzwingen | Aktiviert: Benutzer können die Vorabprüfung nicht abschalten |
-| Länderprüfung erzwingen | Schaltet die Länderabfrage fest ein oder aus. Eingeschaltet wird der Domainname unverschlüsselt an ip-api.com gesendet |
+| Länderprüfung erzwingen | Schaltet die Länderabfrage fest ein oder aus |
+| Abfragedienst für die Länderprüfung | Legt den Dienst fest: ipwho.is oder geojs.io (beide verschlüsselt, Auflösung über Google Public DNS) oder ip-api.com (unverschlüsselt). Vor gewerblicher Nutzung die Nutzungsbedingungen des Dienstes prüfen |
+| Hinweistext auf der Bestätigungsseite | Frei wählbarer Text für die Benutzer, z. B. „Im Zweifel IT-Helpdesk anrufen: Durchwahl 123“ |
 | Blockierte Länder | Zweistellige Ländercodes (z. B. `RU`), die immer blockiert sind |
 
 Nicht konfigurierte Einstellungen bleiben in der Hand der Benutzer.

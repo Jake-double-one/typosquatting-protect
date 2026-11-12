@@ -29,6 +29,87 @@ browserAPI.webNavigation.onCommitted.addListener((details) => {
   }
 });
 
+async function fetchJson(url, headers) {
+  const response = await fetch(url, {
+    headers,
+    signal: AbortSignal.timeout(GEO_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
+function isIpAddress(hostname) {
+  return /^\d+(\.\d+){3}$/.test(hostname) || hostname.includes(":");
+}
+
+// Resolves a hostname through Google Public DNS over HTTPS.
+async function resolveIpAddress(hostname) {
+  const host = hostname.replace(/^\[|\]$/g, "");
+  if (isIpAddress(host)) return host;
+
+  for (const [type, recordType] of [
+    ["A", 1],
+    ["AAAA", 28],
+  ]) {
+    const data = await fetchJson(
+      `https://dns.google/resolve?name=${encodeURIComponent(host)}&type=${type}`,
+    );
+    const record = (data.Answer || []).find((a) => a.type === recordType);
+    if (record) return record.data;
+  }
+  throw new Error("Hostname could not be resolved");
+}
+
+// Each lookup returns { country, countryCode, region, city, ip, isp }.
+const GEO_LOOKUPS = {
+  // HTTPS, detailed
+  async ipwhois(hostname) {
+    const ip = await resolveIpAddress(hostname);
+    const data = await fetchJson(`https://ipwho.is/${encodeURIComponent(ip)}`);
+    if (data.success === false) throw new Error(data.message || "Lookup failed");
+    return {
+      country: data.country,
+      countryCode: data.country_code,
+      region: data.region,
+      city: data.city,
+      ip: data.ip || ip,
+      isp: data.connection && data.connection.isp,
+    };
+  },
+
+  // HTTPS; has no country for some shared (anycast) addresses
+  async geojs(hostname) {
+    const ip = await resolveIpAddress(hostname);
+    const data = await fetchJson(
+      `https://get.geojs.io/v1/ip/geo/${encodeURIComponent(ip)}.json`,
+    );
+    return {
+      country: data.country,
+      countryCode: data.country_code,
+      region: data.region,
+      city: data.city,
+      ip: data.ip || ip,
+      isp: data.organization_name,
+    };
+  },
+
+  // Unencrypted HTTP; the service resolves the domain itself
+  async ipapi(hostname) {
+    const data = await fetchJson(
+      `http://ip-api.com/json/${encodeURIComponent(hostname)}`,
+    );
+    if (data.status === "fail") throw new Error(data.message || "Lookup failed");
+    return {
+      country: data.country,
+      countryCode: data.countryCode,
+      region: data.regionName,
+      city: data.city,
+      ip: data.query,
+      isp: data.isp,
+    };
+  },
+};
+
 async function checkIPGeolocation(url) {
   const settings = await loadSettings();
   if (!settings.enableCountryBlock) {
@@ -36,23 +117,15 @@ async function checkIPGeolocation(url) {
   }
 
   try {
-    const hostname = new URL(url).hostname;
-    const response = await fetch(
-      `http://ip-api.com/json/${encodeURIComponent(hostname)}`,
-      { signal: AbortSignal.timeout(GEO_TIMEOUT_MS) },
-    );
-    const data = await response.json();
+    const lookup = GEO_LOOKUPS[settings.geoProvider];
+    const data = await lookup(new URL(url).hostname);
     const countryCode =
       typeof data.countryCode === "string" ? data.countryCode.toUpperCase() : "";
 
     return {
       status: "enabled",
-      country: data.country,
+      ...data,
       countryCode,
-      region: data.regionName,
-      city: data.city,
-      ip: data.query,
-      isp: data.isp,
       risk: settings.blockedCountryCodes.includes(countryCode) ? "High" : "Low",
     };
   } catch (error) {

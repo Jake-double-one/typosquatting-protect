@@ -41,6 +41,17 @@ document.addEventListener("DOMContentLoaded", async function () {
     browserAPI.runtime.sendMessage({ action: "exitNavigation" });
   });
 
+  // Lookalike characters and the organization's note
+  const settings = await loadSettings();
+  renderHomograph(analyzeHomograph(domain, settings.whitelist));
+  if (settings.noticeText) {
+    const notice = document.getElementById("org-notice");
+    const heading = document.createElement("strong");
+    heading.textContent = t("noticeHeading");
+    notice.append(heading, settings.noticeText);
+    notice.hidden = false;
+  }
+
   // Whitelisting options depend on the organization policy
   const info = await browserAPI.runtime.sendMessage({
     action: "confirmationInfo",
@@ -68,6 +79,29 @@ document.addEventListener("DOMContentLoaded", async function () {
     const p = document.createElement("p");
     build(p);
     parent.appendChild(p);
+  }
+
+  function renderHomograph(finding) {
+    if (!finding) return;
+    const box = document.getElementById("homograph-warning");
+
+    const heading = document.createElement("strong");
+    heading.textContent = `⚠️ ${t("homographTitle")}`;
+    box.appendChild(heading);
+
+    const reasons = [];
+    if (finding.imitates) {
+      reasons.push(t("homographImitates", [finding.imitates]));
+    } else if (finding.mixedScripts) {
+      reasons.push(t("homographMixed"));
+    } else {
+      reasons.push(t("homographLookalike"));
+    }
+    reasons.push(`${t("homographShownAs")} ${finding.unicode}`);
+    reasons.push(`${t("homographRealName")} ${domain}`);
+    reasons.forEach((text) => addParagraph(box, (p) => (p.textContent = text)));
+
+    box.hidden = false;
   }
 
   function renderGeo(geo) {
@@ -121,6 +155,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         [t("geoIsp"), geo.isp],
       ];
       for (const [label, value] of rows) {
+        // Some lookup services only return the country
+        if (value === undefined && label !== t("geoCountry")) continue;
         p.append(document.createElement("br"), `${label}: ${value || t("unknown")}`);
       }
       const risk = document.createElement("strong");

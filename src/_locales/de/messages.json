@@ -149,23 +149,14 @@
   "countryHeading": {
     "message": "Länder blockieren"
   },
-  "countryWarning": {
-    "message": "⚠️ Diese Erweiterung fragt die Standortdaten für Domains, die nicht auf der Whitelist stehen, derzeit über eine unverschlüsselte HTTP-Anfrage bei ip-api.com ab. Das birgt Risiken für Sicherheit und Datenschutz:"
-  },
-  "countryWarningNetwork": {
-    "message": "Wer den Netzwerkverkehr mitliest, kann die aufgerufenen Domains sehen"
-  },
-  "countryWarningProvider": {
-    "message": "Der Anbieter ip-api.com könnte Anfragen anhand der IP-Adresse nachverfolgen"
-  },
   "countryWarningNote": {
-    "message": "Hinweis: Es besteht keine Verbindung oder Vereinbarung mit ip-api.com."
+    "message": "Hinweis: Es besteht keine Verbindung oder Vereinbarung mit diesen Diensten."
   },
   "countryToggleTitle": {
     "message": "Länderprüfung"
   },
   "countryToggleText": {
-    "message": "Ausschalten beendet die Anfragen an ip-api.com"
+    "message": "Ausschalten beendet alle Abfragen"
   },
   "countrySelect": {
     "message": "Land zum Blockieren wählen"
@@ -196,5 +187,59 @@
   },
   "aboutGithub": {
     "message": "Auf GitHub ansehen"
+  },
+  "homographTitle": {
+    "message": "Täuschend ähnliche Zeichen erkannt"
+  },
+  "homographImitates": {
+    "message": "Diese Adresse sieht aus wie $1 von Ihrer Whitelist, ist aber eine andere Domain. Sie verwendet Zeichen aus einem anderen Alphabet, die genauso aussehen."
+  },
+  "homographMixed": {
+    "message": "Diese Domain mischt Buchstaben aus verschiedenen Alphabeten. Das ist ein verbreiteter Phishing-Trick."
+  },
+  "homographLookalike": {
+    "message": "Diese Domain ist mit Buchstaben eines anderen Alphabets geschrieben, die wie lateinische Buchstaben aussehen."
+  },
+  "homographShownAs": {
+    "message": "Angezeigt als:"
+  },
+  "homographRealName": {
+    "message": "Tatsächliche Adresse:"
+  },
+  "barHomographImitates": {
+    "message": " – Nachahmung von $1!"
+  },
+  "barHomograph": {
+    "message": " – enthält täuschend ähnliche Zeichen!"
+  },
+  "noticeHeading": {
+    "message": "Hinweis Ihrer Organisation"
+  },
+  "redundantNote": {
+    "message": "$1 Einträge sind bereits durch andere Einträge abgedeckt."
+  },
+  "redundantClean": {
+    "message": "Aufräumen"
+  },
+  "geoProviderLabel": {
+    "message": "Abfragedienst"
+  },
+  "geoProviderIpwhois": {
+    "message": "ipwho.is (verschlüsselt)"
+  },
+  "geoProviderIpapi": {
+    "message": "ip-api.com (unverschlüsselt)"
+  },
+  "geoProviderInfo_ipwhois": {
+    "message": "Bei Domains, die nicht auf der Whitelist stehen, wird der Domainname verschlüsselt an Google Public DNS gesendet, um die IP-Adresse zu ermitteln. Die IP-Adresse geht anschließend verschlüsselt an ipwho.is."
+  },
+  "geoProviderInfo_ipapi": {
+    "message": "⚠️ Bei Domains, die nicht auf der Whitelist stehen, wird der Domainname unverschlüsselt an ip-api.com gesendet. Wer im Netzwerk mitliest, sieht die aufgerufenen Domains und könnte die Antwort verfälschen."
+  },
+  "geoProviderGeojs": {
+    "message": "geojs.io (verschlüsselt)"
+  },
+  "geoProviderInfo_geojs": {
+    "message": "Bei Domains, die nicht auf der Whitelist stehen, wird der Domainname verschlüsselt an Google Public DNS gesendet, um die IP-Adresse zu ermitteln. Die IP-Adresse geht anschließend verschlüsselt an geojs.io. Bei einigen großen Hosting-Netzen kann dieser Dienst kein Land nennen."
   }
 }

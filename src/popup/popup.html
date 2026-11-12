@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Domain Whitelist Protector</title>
+    <meta charset="UTF-8" />
     <style>
       body {
         width: 400px;
@@ -230,6 +231,24 @@
         font-size: 10px;
         font-weight: bold;
       }
+      .redundant-note {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        font-size: 12px;
+        background-color: #fff8e1;
+        border: 1px solid #ffe082;
+        border-radius: 4px;
+        padding: 5px 8px;
+        margin-top: 8px;
+      }
+      .redundant-note button {
+        padding: 3px 10px;
+        margin-left: 0;
+        font-size: 12px;
+        flex-shrink: 0;
+      }
       .managed-note {
         color: #777;
         font-size: 12px;
@@ -241,6 +260,14 @@
       }
       [hidden] {
         display: none !important;
+      }
+      #geo-provider {
+        width: 100%;
+        padding: 5px;
+        margin-top: 4px;
+      }
+      .warning p {
+        margin: 8px 0 0;
       }
       .warning {
         border: 1px solid #eee;
@@ -324,6 +351,12 @@
         <h3 class="section-title" data-i18n="userHeading">
           Whitelisted Domains:
         </h3>
+        <div class="redundant-note" id="redundant-note" hidden>
+          <span id="redundant-text"></span>
+          <button id="redundant-clean" data-i18n="redundantClean">
+            Clean up
+          </button>
+        </div>
         <ul id="whitelist"></ul>
       </div>
     </div>
@@ -331,31 +364,33 @@
     <div id="country" class="tab-content">
       <h3 class="section-title" data-i18n="countryHeading">Country Blocking</h3>
       <div class="warning">
-        <div class="warning-icon" data-i18n="countryWarning">
-          &#9888;&#65039; Currently, this extension uses a plain HTTP request to
-          ip-api.com to retrieve geographical data for the non-whitelisted
-          domains you access. This approach presents potential security and
-          privacy risks:
+        <label for="geo-provider" data-i18n="geoProviderLabel">
+          Lookup service
+        </label>
+        <select id="geo-provider">
+          <option value="ipwhois" data-i18n="geoProviderIpwhois">
+            ipwho.is (encrypted)
+          </option>
+          <option value="geojs" data-i18n="geoProviderGeojs">
+            geojs.io (encrypted)
+          </option>
+          <option value="ipapi" data-i18n="geoProviderIpapi">
+            ip-api.com (not encrypted)
+          </option>
+        </select>
+        <div class="managed-note" id="geo-provider-managed" data-i18n="managedByOrg" hidden>
+          Managed by your organization
         </div>
-        <ul>
-          <li data-i18n="countryWarningNetwork">
-            Network interceptors could potentially view the domains you are
-            accessing
-          </li>
-          <li data-i18n="countryWarningProvider">
-            The ip-api.com service provider might track domain requests based on
-            source IP address
-          </li>
-        </ul>
+        <p id="geo-provider-info"></p>
         <p data-i18n="countryWarningNote">
-          Please note: We have no affiliation or agreement with ip-api.com.
+          Please note: We have no affiliation or agreement with these services.
         </p>
       </div>
       <div class="toggle-container">
         <div class="toggle-label">
           <strong data-i18n="countryToggleTitle">Country Checks</strong>
           <div data-i18n="countryToggleText">
-            Turning this off stops requests to ip-api.com
+            Turning this off stops all lookup requests
           </div>
           <div
             class="managed-note"

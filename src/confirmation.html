@@ -11,8 +11,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: 100vh;
         margin: 0;
+        padding: 20px 0;
+        box-sizing: border-box;
         background-color: #f8f9fa;
       }
       .container {
@@ -83,6 +85,35 @@
       .exit:hover {
         background-color: #d32f2f;
       }
+      .homograph-warning {
+        border: 2px solid #d32f2f;
+        background-color: #fdecea;
+        color: #7f1d1d;
+        padding: 12px 15px;
+        border-radius: 5px;
+        margin: 15px 0;
+        text-align: left;
+        overflow-wrap: anywhere;
+      }
+      .homograph-warning p {
+        margin: 6px 0 0;
+      }
+      .org-notice {
+        border-left: 4px solid #4285f4;
+        background-color: #eef4fe;
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin: 15px 0;
+        text-align: left;
+        white-space: pre-line;
+      }
+      .org-notice strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      [hidden] {
+        display: none !important;
+      }
       .managed-note {
         color: #777;
         font-size: 12px;
@@ -110,7 +141,9 @@
       <p data-i18n="confirmHint">
         This could potentially be a typosquatting or phishing attempt.
       </p>
+      <div class="homograph-warning" id="homograph-warning" hidden></div>
       <div class="security-details" id="security-details"></div>
+      <div class="org-notice" id="org-notice" hidden></div>
       <div class="buttons">
         <button
           class="continue-whitelist"

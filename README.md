@@ -11,6 +11,7 @@ A browser extension that protects against typosquatting and phishing by showing 
 - **Flexible Configuration**: Choose to whitelist domains permanently or allow temporarily for a session
 - **Import/Export Functionality**: Easily backup and transfer your whitelist between devices
 - **Simple Management**: Add the current domain to your whitelist with a single click
+- **Lookalike Detection**: Warns about domains that imitate whitelisted ones with characters from other alphabets (homograph attacks)
 - **English and German**: The interface follows the browser language
 - **Organization Whitelist**: Administrators can roll out a central whitelist and lock settings via Group Policy
 
@@ -80,6 +81,8 @@ Available policies (see `src/managed_schema.json`):
 | `allowUserWhitelist`     | boolean         | `false`: users cannot whitelist their own domains         |
 | `enablePreemptiveChecks` | boolean         | Forces the confirmation page on or off                    |
 | `enableCountryBlock`     | boolean         | Forces country checks on or off                           |
+| `noticeText`             | string          | Note shown to users on the confirmation page              |
+| `geoProvider`            | string          | Lookup service: `ipwhois`, `geojs` or `ipapi`             |
 | `blockedCountries`       | list of strings | ISO country codes that are always blocked                 |
 
 ## 🔒 Privacy
@@ -88,7 +91,7 @@ This extension:
 
 - Does not collect any data about your browsing habits
 - Stores your whitelist in your browser's sync storage, so it follows your browser profile if sync is turned on
-- Sends the domain name of **non-whitelisted** sites you open to ip-api.com over plain HTTP to look up their country. Turn off "Country Checks" in the popup to stop this
+- Looks up the country of **non-whitelisted** sites you open. By default the domain name is sent to Google Public DNS and the resulting IP address to ipwho.is, both over HTTPS. You can switch to geojs.io (HTTPS) or ip-api.com (plain HTTP) in the popup, or turn off "Country Checks" to stop all lookups
 - Makes no other requests to remote servers
 
 ## 👨‍💻 For Developers

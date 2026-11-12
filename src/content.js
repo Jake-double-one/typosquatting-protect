@@ -16,7 +16,7 @@ function createButton(id, label, onClick) {
   return button;
 }
 
-async function createWarningBar(domain, allowUserWhitelist) {
+async function createWarningBar(domain, allowUserWhitelist, homograph) {
   removeWarningBar();
 
   const bar = document.createElement("div");
@@ -28,6 +28,13 @@ async function createWarningBar(domain, allowUserWhitelist) {
   const strong = document.createElement("strong");
   strong.textContent = domain;
   text.append(t("barBefore"), strong, t("barAfter"));
+  if (homograph) {
+    const alert = document.createElement("strong");
+    alert.textContent = homograph.imitates
+      ? t("barHomographImitates", [homograph.imitates])
+      : t("barHomograph");
+    text.appendChild(alert);
+  }
   bar.appendChild(text);
 
   if (allowUserWhitelist) {
@@ -81,7 +88,11 @@ async function checkDomain() {
   if (isWhitelisted(currentDomain, settings.whitelist)) {
     removeWarningBar();
   } else {
-    createWarningBar(currentDomain, settings.allowUserWhitelist);
+    createWarningBar(
+      currentDomain,
+      settings.allowUserWhitelist,
+      analyzeHomograph(currentDomain, settings.whitelist),
+    );
   }
 }
 
