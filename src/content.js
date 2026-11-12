@@ -53,7 +53,10 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
     text.appendChild(alert);
   }
 
-  if (allowUserWhitelist) {
+  // No one-click whitelisting for domains that look like a trusted one
+  const suspicious = Boolean(homograph || (info && info.similarTo));
+
+  if (allowUserWhitelist && !suspicious) {
     bar.appendChild(
       createButton("whitelist-btn", t("barWhitelist"), async () => {
         await addToUserWhitelist(domain);

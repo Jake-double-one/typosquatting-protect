@@ -84,6 +84,21 @@ async function addEntry(input) {
     alert(t("alertInvalidDomain"));
     return false;
   }
+
+  // Adding a domain that looks like a trusted one needs explicit confirmation
+  let suspicion = null;
+  try {
+    const info = await browserAPI.runtime.sendMessage({
+      action: "domainInfo",
+      hostname: entry.replace(/^\*\./, ""),
+    });
+    suspicion = info && info.suspicion;
+  } catch (e) {
+    // Background not reachable; add without the extra check
+  }
+  if (suspicion && !confirm(t("confirmSuspicious", [entry, suspicion]))) {
+    return false;
+  }
   if (!(await addToUserWhitelist(entry))) {
     alert(t("alertAlreadyListed"));
     return false;

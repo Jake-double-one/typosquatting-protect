@@ -256,5 +256,11 @@
   },
   "loginWarningText": {
     "message": "$1 steht nicht auf der Whitelist. Geben Sie hier kein Passwort ein, wenn Sie nicht sicher sind, dass diese Seite echt ist."
+  },
+  "suspicionNoWhitelist": {
+    "message": "Wegen dieses Verdachts kann die Domain hier nicht freigegeben werden."
+  },
+  "confirmSuspicious": {
+    "message": "Vorsicht: $1 sieht aus wie $2 von der Whitelist, ist aber eine andere Domain. Trotzdem hinzufügen?"
   }
 }

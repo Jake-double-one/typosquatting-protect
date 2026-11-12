@@ -256,5 +256,11 @@
   },
   "loginWarningText": {
     "message": "$1 is not on the whitelist. Do not enter your password here unless you are sure this page is genuine."
+  },
+  "suspicionNoWhitelist": {
+    "message": "Because of this suspicion, the domain cannot be whitelisted here."
+  },
+  "confirmSuspicious": {
+    "message": "Caution: $1 looks like $2 from the whitelist, but it is a different domain. Add it anyway?"
   }
 }

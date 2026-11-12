@@ -256,6 +256,14 @@ function findSimilarWhitelisted(hostname, whitelist) {
   return best ? best.root : null;
 }
 
+// The whitelisted domain that `hostname` imitates (lookalike characters) or
+// resembles (typos and similar tricks), or null if nothing is suspicious.
+function findSuspicion(hostname, whitelist) {
+  const homograph = analyzeHomograph(hostname, whitelist);
+  if (homograph) return homograph.imitates || homograph.unicode;
+  return findSimilarWhitelisted(hostname, whitelist);
+}
+
 async function checkTabNavigation(tabId, url) {
   // Only web pages are checked; browser, extension and file pages are not.
   if (!isHttpUrl(url)) return;
@@ -285,6 +293,7 @@ async function handleMessage(message, sender) {
       return {
         rootDomain: getRootDomain(message.hostname),
         similarTo: findSimilarWhitelisted(message.hostname, settings.whitelist),
+        suspicion: findSuspicion(message.hostname, settings.whitelist),
       };
     }
 
@@ -313,10 +322,12 @@ async function handleMessage(message, sender) {
       const settings = await loadSettings();
       const entry = normalizeEntry(message.domain);
       // The entry must cover the page that is being opened.
+      // Suspicious domains cannot be whitelisted from the confirmation page.
       if (
         settings.allowUserWhitelist &&
         entry &&
-        isWhitelisted(getDomain(message.url), [entry])
+        isWhitelisted(getDomain(message.url), [entry]) &&
+        !findSuspicion(getDomain(message.url), settings.whitelist)
       ) {
         await addToUserWhitelist(entry);
         await browserAPI.tabs.update(sender.tab.id, { url: message.url });

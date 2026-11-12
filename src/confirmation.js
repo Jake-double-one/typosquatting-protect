@@ -69,7 +69,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     box.hidden = false;
   }
 
-  if (info && info.allowUserWhitelist === false) {
+  const suspicious = Boolean(homograph || (info && info.similarTo));
+
+  if (suspicious) {
+    // A domain that looks like a trusted one cannot be whitelisted here
+    whitelistButton.remove();
+    wildcardButton.remove();
+    document.getElementById("suspicion-note").hidden = false;
+  } else if (info && info.allowUserWhitelist === false) {
     whitelistButton.remove();
     wildcardButton.remove();
     document.getElementById("managed-note").hidden = false;
