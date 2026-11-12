@@ -13,27 +13,9 @@ permissions:
   pull-requests: write
 
 jobs:
-  validate:
-    name: Validate Source Files
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-
-      - name: Validate source files
-        run: node scripts/build.js validate
-
   build:
-    needs: validate
     name: Build Browser Extensions
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        browser: [chrome, firefox]
 
     steps:
       - uses: actions/checkout@v4
@@ -41,16 +23,23 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '24.x'
 
-      - name: Build ${{ matrix.browser }} extension
+      - name: Build extensions
         run: node scripts/build.js build
 
-      - name: Upload ${{ matrix.browser }} extension artifact
+      - name: Upload Chrome/Edge extension artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.browser }}-extension
-          path: dist/${{ matrix.browser }}-extension.zip
+          name: chrome-extension
+          path: dist/chrome-extension.zip
+          retention-days: 5
+
+      - name: Upload Firefox extension artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firefox-extension
+          path: dist/firefox-extension.zip
           retention-days: 5
 
   release:

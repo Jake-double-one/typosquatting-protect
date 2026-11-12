@@ -11,6 +11,7 @@ A browser extension that protects against typosquatting and phishing by showing 
 - **Flexible Configuration**: Choose to whitelist domains permanently or allow temporarily for a session
 - **Import/Export Functionality**: Easily backup and transfer your whitelist between devices
 - **Simple Management**: Add the current domain to your whitelist with a single click
+- **Organization Whitelist**: Administrators can roll out a central whitelist and lock settings via Group Policy
 
 ## 📸 Screenshots
 
@@ -37,10 +38,12 @@ A browser extension that protects against typosquatting and phishing by showing 
 
 ## 🛠️ Manual Installation
 
-### Chrome
+Requires Chrome or Edge 153 or later.
+
+### Chrome and Edge
 
 1. Download this repository as a ZIP file and unpack it
-2. Go to `chrome://extensions/`
+2. Go to `chrome://extensions/` (Edge: `edge://extensions/`)
 3. Enable "Developer mode"
 4. Click "Load unpacked" and select the unpacked src/ directory
 
@@ -53,14 +56,39 @@ A browser extension that protects against typosquatting and phishing by showing 
 5. Click "Load Temporary Add-on"
 6. Select any file in the unpacked src/ directory
 
+## 🏢 Enterprise Rollout
+
+The extension can be self-hosted, force-installed and configured through Group
+Policy in Chrome and Edge. Administrators maintain a central whitelist (for
+example `*.sharepoint.com`) that users cannot remove, and can optionally lock
+the other settings.
+
+```bash
+node scripts/enterprise.js --url https://intranet.example.com/extensions --key key.pem
+```
+
+This creates the extension folder to pack, `update.xml`, and ADMX/ADML policy
+templates in `dist/enterprise`. See the step-by-step guide (German):
+[docs/enterprise-gpo.md](docs/enterprise-gpo.md).
+
+Available policies (see `src/managed_schema.json`):
+
+| Policy                   | Type            | Effect                                                    |
+| ------------------------ | --------------- | --------------------------------------------------------- |
+| `managedWhitelist`       | list of strings | Domains that are always whitelisted                       |
+| `allowUserWhitelist`     | boolean         | `false`: users cannot whitelist their own domains         |
+| `enablePreemptiveChecks` | boolean         | Forces the confirmation page on or off                    |
+| `enableCountryBlock`     | boolean         | Forces country checks on or off                           |
+| `blockedCountries`       | list of strings | ISO country codes that are always blocked                 |
+
 ## 🔒 Privacy
 
 This extension:
 
 - Does not collect any data about your browsing habits
-- Does not send any information to remote servers
-- Stores your whitelist only on your local machine
-- Requires minimal permissions to function
+- Stores your whitelist in your browser's sync storage, so it follows your browser profile if sync is turned on
+- Sends the domain name of **non-whitelisted** sites you open to ip-api.com over plain HTTP to look up their country. Turn off "Country Checks" in the popup to stop this
+- Makes no other requests to remote servers
 
 ## 👨‍💻 For Developers
 
@@ -68,15 +96,17 @@ This extension:
 
 ```
 domain-whitelist-protector/src/
-├── manifest.json        # Extension configuration
-├── background.js        # Main extension logic
-├── content.js           # Content script for warning bar
-├── popup.html           # Whitelist management UI
-├── popup.js             # Whitelist management logic
-├── confirmation.html    # Safety confirmation page
-├── confirmation.js      # Confirmation page logic
-├── styles.css           # Warning bar styles
-└── images/              # Extension icons
+├── manifest.json          # Extension configuration (Chrome, Edge)
+├── manifest.firefox.json  # Extension configuration (Firefox)
+├── managed_schema.json    # Settings administrators can set via policy
+├── common.js              # Shared whitelist and settings logic
+├── background.js          # Service worker: navigation checks
+├── content.js             # Content script for warning bar
+├── confirmation.html      # Safety confirmation page
+├── confirmation.js        # Confirmation page logic
+├── styles.css             # Warning bar styles
+├── popup/                 # Settings UI
+└── images/                # Extension icons
 ```
 
 ### Building from Source
@@ -91,6 +121,8 @@ cd typosquatting-protect
 # Build the extension
 node scripts/build.js build
 ```
+
+`dist/chrome-extension.zip` is for both Chrome and Edge.
 
 ## 📝 License
 
