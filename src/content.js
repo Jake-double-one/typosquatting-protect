@@ -87,10 +87,11 @@ async function createWarningBar(domain, allowUserWhitelist, homograph) {
 }
 
 // ---------------------------------------------------------------------------
-// Sign-in name guard: warns when the user types their company logon name or
-// e-mail address into a field on a non-whitelisted page.
+// Sign-in guard: warns when the user types a company e-mail address (or one
+// of their own sign-in names) into a field on a non-whitelisted page.
 // ---------------------------------------------------------------------------
 let protectedLogins = [];
+let protectedEmailDomains = [];
 let loginWarning = null;
 let loginWarningField = null;
 const markedFields = new Set();
@@ -171,11 +172,26 @@ function clearLoginGuard() {
   hideLoginWarning();
 }
 
+// True for "name@example.com" if example.com (or a parent of the address's
+// domain) is one of the organization's e-mail domains.
+function isCompanyEmail(value) {
+  const match = /^[^\s@]+@([^\s@]+)$/.exec(value);
+  if (!match) return false;
+  const domain = match[1].replace(/\.$/, "");
+  return protectedEmailDomains.some(
+    (company) => domain === company || domain.endsWith(`.${company}`),
+  );
+}
+
+function isLoginGuardActive() {
+  return protectedLogins.length > 0 || protectedEmailDomains.length > 0;
+}
+
 function checkField(field) {
-  if (!protectedLogins.length || !isTextField(field)) return;
+  if (!isLoginGuardActive() || !isTextField(field)) return;
   const value = (field.value || "").trim().toLowerCase();
 
-  if (value && protectedLogins.includes(value)) {
+  if (value && (protectedLogins.includes(value) || isCompanyEmail(value))) {
     markField(field);
     showLoginWarning(field);
     // The password usually follows: mark those fields as well
@@ -197,7 +213,7 @@ function onFieldEvent(event) {
 
 // Fields that were filled in by the browser or a password manager
 function scanFields() {
-  if (!protectedLogins.length) return;
+  if (!isLoginGuardActive()) return;
   document.querySelectorAll("input, textarea").forEach(checkField);
 }
 
@@ -215,9 +231,11 @@ async function checkDomain() {
   if (isWhitelisted(currentDomain, settings.whitelist)) {
     removeWarningBar();
     protectedLogins = [];
+    protectedEmailDomains = [];
     clearLoginGuard();
   } else {
     protectedLogins = settings.protectedLogins;
+    protectedEmailDomains = settings.protectedEmailDomains;
     scanFields();
     setTimeout(scanFields, 1500);
     createWarningBar(

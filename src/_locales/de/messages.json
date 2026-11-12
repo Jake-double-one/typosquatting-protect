@@ -252,7 +252,7 @@
     "message": " – ähnelt $1!"
   },
   "loginWarningTitle": {
-    "message": "⚠️ Achtung: Firmen-Anmeldename eingegeben"
+    "message": "⚠️ Achtung: Firmen-Anmeldung eingegeben"
   },
   "loginWarningText": {
     "message": "$1 steht nicht auf der Whitelist. Geben Sie hier kein Passwort ein, wenn Sie nicht sicher sind, dass diese Seite echt ist."

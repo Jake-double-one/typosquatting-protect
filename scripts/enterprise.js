@@ -92,6 +92,22 @@ const POLICIES = [
     },
   },
   {
+    name: "protectedEmailDomains",
+    type: "list",
+    en: {
+      title: "Company e-mail domains (sign-in warning)",
+      listLabel: "E-mail domains",
+      explain:
+        "The e-mail domains of your organization, one per line, without the @ sign.\n\nExample:\n  example.com\n\nWhen a user types an e-mail address of one of these domains into a field on a non-whitelisted page, the field and the password fields on the page are marked red and a warning appears next to the field. The check happens in the browser; nothing is sent anywhere.\n\nSubdomains are included: example.com also covers name@mail.example.com.",
+    },
+    de: {
+      title: "Firmen-Maildomains (Warnung bei Anmeldung)",
+      listLabel: "Maildomains",
+      explain:
+        "Die Maildomains Ihrer Organisation, eine pro Zeile, ohne @-Zeichen.\n\nBeispiel:\n  example.com\n\nGibt ein Benutzer eine E-Mail-Adresse einer dieser Domains in ein Feld auf einer nicht erlaubten Seite ein, werden das Feld und die Passwortfelder der Seite rot markiert, und ein Hinweis erscheint neben dem Feld. Die Prüfung findet im Browser statt; es wird nichts gesendet.\n\nSubdomains sind eingeschlossen: example.com gilt auch für name@mail.example.com.",
+    },
+  },
+  {
     name: "noticeText",
     type: "text",
     en: {
@@ -383,13 +399,6 @@ function main() {
   fs.writeFileSync(path.join(policyDir, "en-US", `${ADMX_NAME}.adml`), buildAdml("en"));
   fs.writeFileSync(path.join(policyDir, "de-DE", `${ADMX_NAME}.adml`), buildAdml("de"));
 
-  // Script that reads each user's sign-in names from Active Directory
-  const loginScript = fs
-    .readFileSync(path.join(__dirname, "Set-ProtectedLogins.template.ps1"), "utf8")
-    .replace("{{EXTENSION_ID}}", extensionId)
-    .replace(/\r?\n/g, "\r\n");
-  fs.writeFileSync(path.join(OUT_DIR, "Set-ProtectedLogins.ps1"), loginScript);
-
   const values = [
     "Domain Whitelist Protector - values for the Group Policy",
     "",
@@ -407,13 +416,6 @@ function main() {
         `  HKLM\\${browser.policyRoot}\\3rdparty\\extensions\\${extensionId}\\policy`,
     ),
     "",
-    "Key paths for the per-user sign-in names (Group Policy Preferences,",
-    "hive HKEY_CURRENT_USER, see the guide):",
-    ...BROWSERS.map(
-      (browser) =>
-        `  ${browser.policyRoot}\\3rdparty\\extensions\\${extensionId}\\policy\\protectedLogins`,
-    ),
-    "",
   ].join("\r\n");
   fs.writeFileSync(path.join(OUT_DIR, "gpo-values.txt"), values);
 
@@ -426,7 +428,6 @@ function main() {
   console.log("  update.xml                       for the web server");
   console.log("  PolicyDefinitions/               Group Policy templates");
   console.log("  gpo-values.txt                   values to enter in the GPO");
-  console.log("  Set-ProtectedLogins.ps1          provides users' sign-in names (optional)");
 }
 
 main();

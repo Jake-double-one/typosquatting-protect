@@ -252,7 +252,7 @@
     "message": " – similar to $1!"
   },
   "loginWarningTitle": {
-    "message": "⚠️ Warning: company sign-in name entered"
+    "message": "⚠️ Warning: company sign-in entered"
   },
   "loginWarningText": {
     "message": "$1 is not on the whitelist. Do not enter your password here unless you are sure this page is genuine."

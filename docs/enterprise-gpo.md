@@ -41,7 +41,6 @@ Danach liegt in `dist/enterprise`:
 | `update.xml` | Update-Beschreibung für den Webserver |
 | `PolicyDefinitions/` | GPO-Vorlagen (`.admx`, `.adml` in Deutsch und Englisch) |
 | `gpo-values.txt` | Extension-ID und die Werte, die du in die GPO einträgst |
-| `Set-ProtectedLogins.ps1` | Optional: liefert der Erweiterung Anmeldename und E-Mail-Adressen der Benutzer |
 
 ### 2. Erweiterung packen
 
@@ -128,6 +127,7 @@ beide Browser nutzt, trage die Liste in beiden Ordnern ein.
 | Bestätigungsseite für nicht erlaubte Domains erzwingen | Aktiviert: Benutzer können die Vorabprüfung nicht abschalten |
 | Länderprüfung erzwingen | Schaltet die Länderabfrage fest ein oder aus |
 | Abfragedienst für die Länderprüfung | Legt den Dienst fest: ipwho.is oder geojs.io (beide verschlüsselt, Auflösung über Google Public DNS) oder ip-api.com (unverschlüsselt). Vor gewerblicher Nutzung die Nutzungsbedingungen des Dienstes prüfen |
+| Firmen-Maildomains (Warnung bei Anmeldung) | Adressen dieser Domains lösen auf nicht erlaubten Seiten eine rote Warnung am Eingabefeld aus |
 | Hinweistext auf der Bestätigungsseite | Frei wählbarer Text für die Benutzer, z. B. „Im Zweifel IT-Helpdesk anrufen: Durchwahl 123“ |
 | Blockierte Länder | Zweistellige Ländercodes (z. B. `RU`), die immer blockiert sind |
 
@@ -135,80 +135,42 @@ Nicht konfigurierte Einstellungen bleiben in der Hand der Benutzer.
 
 ## Warnung bei Eingabe der Firmen-Anmeldung
 
-Die Erweiterung kann warnen, sobald jemand seinen Anmeldenamen oder seine
-E-Mail-Adresse in ein Feld auf einer nicht freigegebenen Seite eingibt: Das
-Feld und die Passwortfelder der Seite werden rot markiert, und ein Hinweis
-erscheint direkt am Feld. Der Vergleich findet nur im Browser statt.
+Die Erweiterung kann warnen, sobald jemand eine Firmen-E-Mail-Adresse in ein
+Feld auf einer nicht freigegebenen Seite eingibt: Das Feld und die
+Passwortfelder der Seite werden rot markiert, und ein Hinweis erscheint direkt
+neben dem Feld. Die Prüfung findet nur im Browser statt.
 
-Dafür muss die Erweiterung die Kennungen des jeweiligen Benutzers kennen:
-Anmeldename und E-Mail-Adresse, auch wenn beide unterschiedlich aufgebaut sind
-(zum Beispiel `MustermannM` und `max.mustermann@example.com`). Der Browser
-kann sie nicht selbst auslesen; sie werden pro Benutzer in die Richtlinie der
-Erweiterung geschrieben (`protectedLogins`). Dafür gibt es zwei Wege.
+Dafür genügt eine Einstellung in der GPO, im selben Ordner wie die
+Firmen-Whitelist:
 
-### Weg A: Skript liest alles aus dem Active Directory (empfohlen)
+1. „Firmen-Maildomains (Warnung bei Anmeldung)“ öffnen und auf **Aktiviert**
+   stellen.
+2. **Anzeigen…** klicken und die Maildomains eintragen, eine pro Zeile, ohne
+   `@`:
 
-`dist/enterprise/Set-ProtectedLogins.ps1` trägt für jeden angemeldeten
-Domänenbenutzer automatisch ein:
+   ```
+   example.com
+   ```
 
-- Anmeldename (`MustermannM`) und `DOMÄNE\MustermannM`
-- E-Mail-Adresse (`mail`)
-- Benutzerprinzipalname (UPN)
-- weitere E-Mail-Aliase (`proxyAddresses`); abschaltbar mit `-SkipAliases`
+Danach löst jede Adresse aus, die auf `@example.com` endet (auch
+`@mail.example.com`). Wie bei der Whitelist gilt: für Chrome und Edge jeweils
+eintragen. Auf freigegebenen Seiten erscheint keine Warnung.
 
-Das Skript muss als SYSTEM laufen, weil normale Benutzer unter
-`HKCU\Software\Policies` nicht schreiben dürfen.
+### Optional: weitere Kennungen pro Benutzer
 
-1. `Set-ProtectedLogins.ps1` auf eine Freigabe legen, die alle Computer lesen
-   können, zum Beispiel `\\<domäne>\NETLOGON\`.
-2. In der GPO unter *Computerkonfiguration → Einstellungen →
-   Systemsteuerungseinstellungen → Geplante Aufgaben* eine neue geplante
-   Aufgabe („Mindestens Windows 7“) anlegen:
-
-   | Feld | Wert |
-   | --- | --- |
-   | Benutzerkonto | `NT AUTHORITY\SYSTEM` |
-   | Trigger | Bei Anmeldung, jeder Benutzer, Verzögerung 30 Sekunden |
-   | Aktion | Programm starten: `powershell.exe` |
-   | Argumente | `-NoProfile -ExecutionPolicy Bypass -File "\\<domäne>\NETLOGON\Set-ProtectedLogins.ps1"` |
-
-Das Skript enthält die Extension-ID. Nach einem Wechsel der ID muss es neu
-erzeugt werden.
-
-### Weg B: Feste Muster ohne Skript
-
-Reicht der Anmeldename oder lässt sich die E-Mail-Adresse aus ihm ableiten,
-genügen Registrierungselemente in den Gruppenrichtlinien-Einstellungen, weil
-dort Variablen wie `%LogonUser%` aufgelöst werden.
-
-In der GPO unter *Benutzerkonfiguration → Einstellungen → Windows-Einstellungen
-→ Registrierung* pro Kennung ein Registrierungselement anlegen
-(*Neu → Registrierungselement*):
+Soll zusätzlich der reine Anmeldename auslösen, kann er pro Benutzer über die
+Richtlinie `protectedLogins` mitgegeben werden. Das geht nur über die
+Gruppenrichtlinien-Einstellungen (*Benutzerkonfiguration → Einstellungen →
+Windows-Einstellungen → Registrierung*), weil nur dort Variablen aufgelöst
+werden:
 
 | Feld | Wert |
 | --- | --- |
-| Aktion | Aktualisieren |
 | Struktur | `HKEY_CURRENT_USER` |
-| Schlüsselpfad | der Pfad aus `gpo-values.txt`, er endet auf `\policy\protectedLogins` |
-| Name | `1` (für weitere Kennungen `2`, `3`, …) |
+| Schlüsselpfad | der Richtlinienpfad aus `gpo-values.txt` (ohne `HKLM\`), ergänzt um `\protectedLogins` |
+| Name | `1` |
 | Werttyp | `REG_SZ` |
-| Wertdaten | die Kennung, siehe unten |
-
-| Kennung | Wertdaten |
-| --- | --- |
-| Anmeldename | `%LogonUser%` |
-| Anmeldename mit Domäne | `%LogonDomain%\%LogonUser%` |
-| E-Mail-Adresse, wenn sie dem Anmeldenamen entspricht | `%LogonUser%@example.com` |
-
-Für Chrome und Edge je eigene Elemente mit dem jeweiligen Schlüsselpfad
-anlegen. Weg A und Weg B nicht mischen: Das Skript ersetzt die Liste jedes Mal
-vollständig.
-
-### Prüfen
-
-Groß- und Kleinschreibung spielt beim Vergleich keine Rolle. Unter
-`chrome://policy` bzw. `edge://policy` muss `protectedLogins` mit den Kennungen
-des angemeldeten Benutzers erscheinen, zusätzlich zur Firmen-Whitelist.
+| Wertdaten | `%LogonUser%` |
 
 ## Im Alltag
 

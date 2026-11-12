@@ -416,8 +416,23 @@ async function loadSettings() {
     ),
   ];
 
+  // The organization's e-mail domains ("example.com"). Typing an address of
+  // such a domain on a non-whitelisted page triggers the same warning.
+  const protectedEmailDomains = [
+    ...new Set(
+      (Array.isArray(policy.protectedEmailDomains)
+        ? policy.protectedEmailDomains
+        : []
+      )
+        .filter((domain) => typeof domain === "string")
+        .map((domain) => normalizeEntry(domain.trim().replace(/^.*@/, "")))
+        .filter((domain) => domain && !domain.startsWith("*.")),
+    ),
+  ];
+
   return {
     protectedLogins,
+    protectedEmailDomains,
     // Optional text from the organization, shown on the confirmation page
     noticeText:
       typeof policy.noticeText === "string"
