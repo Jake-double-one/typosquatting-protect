@@ -42,6 +42,34 @@ jobs:
           path: dist/firefox-extension.zip
           retention-days: 5
 
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Install Playwright and Chromium
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Allow the tests to set an organization policy
+        run: |
+          sudo mkdir -p /etc/opt/chrome_for_testing/policies/managed
+          sudo chown "$USER" /etc/opt/chrome_for_testing/policies/managed
+
+      - name: Browser tests
+        run: npm run test:e2e
+
   release:
     needs: build
     name: Create GitHub Release

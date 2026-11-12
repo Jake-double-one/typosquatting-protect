@@ -133,6 +133,9 @@ src/
 scripts/
 ├── build.js               # Builds the packages
 └── enterprise.js          # Creates the rollout files
+tests/
+├── unit/                  # Logic tests (whitelist, settings, lookalikes)
+└── e2e/                   # Browser tests with the extension loaded
 ```
 
 ```bash
@@ -142,6 +145,24 @@ node scripts/build.js build
 ```
 
 The build writes `dist/chrome-extension.zip` (for Chrome and Edge) and `dist/firefox-extension.zip`.
+
+### Tests
+
+```bash
+npm test            # logic tests, plain Node.js, no dependencies
+npm install         # once, for the browser tests
+npx playwright install chromium
+npm run test:e2e    # builds the extension and drives it in Chromium
+```
+
+The browser tests load the built extension into a headless Chromium and point every hostname at a local test server, so they need no internet access.
+
+The tests that cover organization policies write a policy file to `/etc/opt/chrome_for_testing/policies/managed` (Linux only). They are skipped when that directory is not writable:
+
+```bash
+sudo mkdir -p /etc/opt/chrome_for_testing/policies/managed
+sudo chown "$USER" /etc/opt/chrome_for_testing/policies/managed
+```
 
 ## License
 
