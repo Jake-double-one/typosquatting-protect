@@ -1,0 +1,172 @@
+# Firmen-Rollout per Gruppenrichtlinie (Chrome und Edge)
+
+Diese Anleitung beschreibt, wie du die Erweiterung selbst hostest, per GPO auf
+allen Rechnern installierst und eine Firmen-Whitelist zentral pflegst.
+
+Die Firmen-Whitelist liegt ausschließlich in der GPO. Eine neue Domain ist dort
+eine neue Zeile; die Erweiterung muss dafür nicht neu verteilt werden.
+
+## Voraussetzungen
+
+- Rechner in einer Active-Directory-Domäne. Chrome und Edge installieren
+  selbst gehostete Erweiterungen unter Windows nur auf verwalteten Geräten.
+- Chrome bzw. Edge ab Version 153.
+- Ein interner Webserver, den alle Rechner erreichen (HTTPS empfohlen).
+- Die offiziellen Richtlinienvorlagen von
+  [Chrome](https://chromeenterprise.google/browser/download/) und
+  [Edge](https://www.microsoft.com/edge/business/download) im zentralen
+  Richtlinienspeicher.
+- [Node.js](https://nodejs.org/) auf deinem Arbeitsrechner, um die Dateien zu
+  erzeugen.
+
+## Einmalige Einrichtung
+
+### 1. Dateien erzeugen
+
+Im Projektordner, mit der Adresse des Ordners auf eurem Webserver:
+
+```bash
+node scripts/enterprise.js --url https://intranet.example.com/extensions --key key.pem
+```
+
+Beim ersten Aufruf wird `key.pem` neu erstellt. Diese Datei legt die
+Extension-ID fest und wird für jedes spätere Update gebraucht. Bewahre sie
+sicher auf und gib sie nicht weiter; sie gehört nicht ins Repository.
+
+Danach liegt in `dist/enterprise`:
+
+| Datei / Ordner | Zweck |
+| --- | --- |
+| `domain-whitelist-protector/` | Die Erweiterung, bereit zum Packen |
+| `update.xml` | Update-Beschreibung für den Webserver |
+| `PolicyDefinitions/` | GPO-Vorlagen (`.admx`, `.adml` in Deutsch und Englisch) |
+| `gpo-values.txt` | Extension-ID und die Werte, die du in die GPO einträgst |
+
+### 2. Erweiterung packen
+
+1. In Chrome `chrome://extensions` öffnen (in Edge `edge://extensions`) und
+   den Entwicklermodus einschalten.
+2. „Erweiterung packen“ wählen.
+3. Stammverzeichnis: `dist/enterprise/domain-whitelist-protector`
+4. Datei mit privatem Schlüssel: deine `key.pem`
+
+Das Ergebnis ist `dist/enterprise/domain-whitelist-protector.crx`. Dasselbe
+Paket funktioniert in Chrome und Edge.
+
+Alternativ per Kommandozeile:
+
+```bash
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --pack-extension=C:\pfad\dist\enterprise\domain-whitelist-protector --pack-extension-key=C:\pfad\key.pem
+```
+
+### 3. Auf den Webserver legen
+
+Lade `domain-whitelist-protector.crx` und `update.xml` in den Ordner, den du
+bei `--url` angegeben hast. Beide Adressen stehen in `gpo-values.txt`.
+
+Bei IIS muss für die Endung `.crx` ein MIME-Typ eingetragen sein
+(`application/x-chrome-extension`), sonst liefert der Server die Datei nicht
+aus.
+
+### 4. GPO-Vorlagen einspielen
+
+Kopiere den Inhalt von `dist/enterprise/PolicyDefinitions` in den zentralen
+Richtlinienspeicher:
+
+```
+\\<domäne>\SYSVOL\<domäne>\Policies\PolicyDefinitions\
+```
+
+Die `.admx`-Datei kommt direkt in diesen Ordner, die `.adml`-Dateien in die
+Unterordner `de-DE` und `en-US`.
+
+### 5. Erweiterung per GPO installieren
+
+In der Gruppenrichtlinienverwaltung eine GPO anlegen oder öffnen und unter
+*Computerkonfiguration → Richtlinien → Administrative Vorlagen* die
+Richtlinie `ExtensionInstallForcelist` aktivieren:
+
+- Chrome: *Google → Google Chrome → Erweiterungen*
+- Edge: *Microsoft Edge → Erweiterungen*
+
+Trage dort den Wert aus `gpo-values.txt` ein. Er hat die Form:
+
+```
+<Extension-ID>;https://intranet.example.com/extensions/update.xml
+```
+
+### 6. Firmen-Whitelist eintragen
+
+In derselben GPO unter *Computerkonfiguration → Richtlinien → Administrative
+Vorlagen → Domain Whitelist Protector* gibt es je einen Ordner für
+**Google Chrome** und **Microsoft Edge** mit denselben Einstellungen.
+
+1. „Firmen-Whitelist“ öffnen und auf **Aktiviert** stellen.
+2. **Anzeigen…** klicken.
+3. Eine Domain pro Zeile eintragen, zum Beispiel:
+
+   ```
+   *.sharepoint.com
+   *.office.com
+   intranet.example.com
+   ```
+
+Ein Eintrag mit `*.` gilt für die Domain und alle Subdomains. Vollständige
+Adressen wie `https://firma.sharepoint.com/sites/team` werden auf die Domain
+gekürzt.
+
+Chrome und Edge lesen ihre Richtlinien aus getrennten Bereichen. Wenn ihr
+beide Browser nutzt, trage die Liste in beiden Ordnern ein.
+
+## Alle Einstellungen
+
+| Einstellung | Wirkung |
+| --- | --- |
+| Firmen-Whitelist | Domains, die für alle immer erlaubt sind |
+| Benutzer dürfen eigene Domains erlauben | Deaktiviert: nur die Firmen-Whitelist gilt. Andere Seiten lassen sich nach der Warnung weiterhin öffnen, aber nicht dauerhaft erlauben |
+| Bestätigungsseite für nicht erlaubte Domains erzwingen | Aktiviert: Benutzer können die Vorabprüfung nicht abschalten |
+| Länderprüfung erzwingen | Schaltet die Länderabfrage fest ein oder aus. Eingeschaltet wird der Domainname unverschlüsselt an ip-api.com gesendet |
+| Blockierte Länder | Zweistellige Ländercodes (z. B. `RU`), die immer blockiert sind |
+
+Nicht konfigurierte Einstellungen bleiben in der Hand der Benutzer.
+
+## Im Alltag
+
+### Domain hinzufügen oder entfernen
+
+1. GPO öffnen → *Domain Whitelist Protector* → „Firmen-Whitelist“ →
+   **Anzeigen…**
+2. Zeile ergänzen oder löschen, mit OK bestätigen.
+
+Die Rechner übernehmen die Änderung beim nächsten Richtlinien-Refresh
+(standardmäßig etwa alle 90 Minuten, sofort mit `gpupdate /force`). Ein
+Neustart des Browsers ist nicht nötig.
+
+### Prüfen, ob die Richtlinie ankommt
+
+`chrome://policy` bzw. `edge://policy` öffnen. Die Einstellungen stehen dort
+unter dem Namen der Erweiterung. Im Popup der Erweiterung erscheinen die
+Firmen-Domains unter „Managed by your organization“.
+
+### Neue Version der Erweiterung verteilen
+
+1. Versionsnummer in `src/manifest.json` erhöhen.
+2. Schritt 1 und 2 mit **derselben** `key.pem` wiederholen.
+3. Die neue `.crx` und `update.xml` auf den Webserver legen.
+
+Die Browser holen das Update innerhalb einiger Stunden selbst. Die GPO und die
+Whitelist bleiben unverändert.
+
+## Späterer Wechsel in einen Store
+
+Chrome Web Store und Edge Add-ons vergeben eine eigene Extension-ID. Bei einem
+Wechsel:
+
+1. Vorlagen für die neue ID erzeugen:
+   `node scripts/enterprise.js --url <egal> --id <neue ID>` und nur den Ordner
+   `PolicyDefinitions` verwenden.
+2. In der GPO die neue ID bei `ExtensionInstallForcelist` eintragen und die
+   Firmen-Whitelist unter den neuen Vorlagen erneut eintragen.
+
+Eigene Einträge der Benutzer hängen an der alten ID und müssen bei Bedarf über
+Export/Import im Popup übertragen werden.
