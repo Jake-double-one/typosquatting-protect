@@ -53,9 +53,13 @@ The interface is available in English and German and follows the browser languag
 
 `blob:` pages count as the website that created them, and `about:blank` windows a website fills with content count as that website, so neither gets around these checks.
 
+The sign-in guard works in every frame of a page, also for fields in closed shadow roots, editable regions and inputs with unusual types. Content without an address of its own (a `blob:` or `about:` page created by a sandboxed frame) is treated as not whitelisted: it gets the warning bar and the sign-in guard.
+
+A page can try to remove, hide or cover the warning bar and the sign-in warning. The extension puts them back, restores their styles and keeps them above anything the page shows. A page that keeps fighting this can still make them flicker, so while the bar applies to a page the extension's toolbar icon carries a red **!** as well, which no page can reach.
+
 Hiding the warning bar only hides the bar. Whether a user closes it for a website or it is switched off in the popup or by policy, the confirmation page, the lookalike warnings on it and the sign-in guard keep working.
 
-The similarity and lookalike checks compare the domain with your whitelist inside the browser. They are hints, not proof: `bahn.com` is reported as similar to `bahn.de`, for example.
+The similarity and lookalike checks compare the domain with your whitelist inside the browser. Accented names are also compared by their plain reading, so `microsoftonlíne.com` is reported when `microsoftonline.com` is trusted. They are hints, not proof: `bahn.com` is reported as similar to `bahn.de`, for example.
 
 ## Requirements
 

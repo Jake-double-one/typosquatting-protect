@@ -331,8 +331,23 @@ function getRootDomain(hostname) {
     }
   }
 
-  // Browsers without the publicSuffix API: last two labels.
-  return host.split(".").slice(-2).join(".");
+  // Browsers without the publicSuffix API: last two labels, or three for
+  // endings such as "co.uk". The ending alone is no domain.
+  const labels = host.split(".");
+  const size = hasTwoPartEnding(labels) ? 3 : 2;
+  return labels.length < size ? null : labels.slice(-size).join(".");
+}
+
+// Rough stand-in for the public suffix list: a generic second-level label
+// under a country code ("co.uk", "com.au", "org.nz", "ac.at").
+const GENERIC_SECOND_LEVEL = ["co", "com", "org", "net", "gov", "edu", "ac", "mil"];
+
+function hasTwoPartEnding(labels) {
+  return (
+    labels.length >= 2 &&
+    labels[labels.length - 1].length === 2 &&
+    GENERIC_SECOND_LEVEL.includes(labels[labels.length - 2])
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -381,9 +396,32 @@ function splitRegistrableDomain(hostname) {
   return { root, name: root.slice(0, dot), ending: root.slice(dot + 1) };
 }
 
+// What an internationalized name ("xn--...") looks like when its letters are
+// read without accents: "microsoftonlíne.com" reads "microsoftonline.com".
+// Null if the name is plain already or does not read as Latin letters.
+function plainReading(host) {
+  if (!host.includes("xn--")) return null;
+  const reading = toUnicodeHostname(host).split(".").map(latinSkeleton).join(".");
+  return reading !== host && /^[a-z0-9.-]+$/.test(reading) ? reading : null;
+}
+
 // Returns the whitelisted domain that `hostname` resembles, or null.
 function findSimilarWhitelisted(hostname, whitelist) {
   const host = (hostname || "").toLowerCase().replace(/\.$/, "");
+
+  // An accented name is compared by its plain reading as well. Reading
+  // exactly like a trusted domain is the closest resemblance there is.
+  const reading = plainReading(host);
+  if (reading && !isWhitelisted(host, whitelist)) {
+    const readingRoot = getRootDomain(reading);
+    const sameRoot = whitelist.some(
+      (entry) => readingRoot && getRootDomain(entry.replace(/^\*\./, "")) === readingRoot,
+    );
+    if (sameRoot) return readingRoot;
+    const similar = findSimilarWhitelisted(reading, whitelist);
+    if (similar) return similar;
+  }
+
   const candidate = splitRegistrableDomain(host);
   if (!candidate) return null;
   const candidateVisual = visualForm(candidate.name);
@@ -491,6 +529,24 @@ async function handleMessage(message, sender) {
             ),
         ),
       };
+    }
+
+    case "pageStatus": {
+      // The content script of a tab's top document reports whether the page
+      // is warned about. The mark on the toolbar icon repeats the warning
+      // where the page cannot reach it. The browser clears it on navigation.
+      if (sender.tab && sender.frameId === 0 && browserAPI.action?.setBadgeText) {
+        const tabId = sender.tab.id;
+        await browserAPI.action.setBadgeBackgroundColor({ tabId, color: "#d50000" });
+        await browserAPI.action.setBadgeText({ tabId, text: message.warned ? "!" : "" });
+      }
+      return {};
+    }
+
+    case "tabDomain": {
+      // For frames without an address in browsers that do not tell a frame
+      // which page embeds it: the website shown in the sender's tab.
+      return { domain: sender.tab ? getWebDomain(sender.tab.url) : "" };
     }
 
     case "dismissBar": {

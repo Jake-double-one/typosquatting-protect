@@ -1,7 +1,7 @@
 // Browser tests without an organization policy.
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { BAR, barText, EXTENSION_ID, gotoAllowed, gotoAndContinue, gotoBlocked, launch, settle } = require("./helpers");
+const { BAR, barText, EXTENSION_ID, gotoAllowed, gotoAndContinue, gotoBlocked, launch, pixelAt, settle } = require("./helpers");
 
 let app;
 let page;
@@ -370,4 +370,138 @@ test("the popup normalizes input, asks before adding a lookalike and cleans up",
   assert.ok(!entries.includes("a.example.com"));
   assert.ok(entries.includes("*.example.com") && entries.includes("keep.de"));
   await popup.close();
+});
+
+const BAR_RED = [255, 82, 82];
+const badgeText = (target) =>
+  app.evaluate(async (url) => {
+    const [tab] = await chrome.tabs.query({ url });
+    return chrome.action.getBadgeText({ tabId: tab.id });
+  }, target);
+
+test("a page cannot remove, hide or cover the warning bar", async () => {
+  await resetWhitelist();
+  await gotoAndContinue(page, "hide-bar.test");
+  await page.locator(BAR).waitFor();
+  const shown = () =>
+    page.evaluate(() => {
+      const bar = document.getElementById("whitelist-warning-bar");
+      if (!bar || !bar.isConnected) return "removed";
+      const style = getComputedStyle(bar);
+      if (style.display !== "block" || style.visibility !== "visible" || style.opacity !== "1") {
+        return `hidden (${style.display}, ${style.visibility}, ${style.opacity})`;
+      }
+      if (bar.getBoundingClientRect().height < 10) return "collapsed";
+      return bar.matches(":popover-open") ? "shown" : "not in the top layer";
+    });
+  assert.equal(await shown(), "shown");
+  assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED);
+
+  // Removing the element, or moving it somewhere hidden
+  await page.evaluate(() => document.getElementById("whitelist-warning-bar").remove());
+  assert.equal(await shown(), "shown", "after removal");
+  await page.evaluate(() => {
+    const box = document.createElement("div");
+    box.style.display = "none";
+    document.body.appendChild(box).appendChild(document.getElementById("whitelist-warning-bar"));
+  });
+  assert.equal(await shown(), "shown", "after moving");
+
+  // Style rules and changed attributes
+  await page.addStyleTag({
+    content:
+      "html body div#whitelist-warning-bar, html > div#whitelist-warning-bar { display: none !important; visibility: hidden !important; opacity: 0 !important; top: -500px !important; }",
+  });
+  assert.equal(await shown(), "shown", "after a style rule");
+  await page.evaluate(() => {
+    const bar = document.getElementById("whitelist-warning-bar");
+    bar.setAttribute("style", "display: none !important");
+    bar.removeAttribute("popover");
+    bar.hidden = true;
+  });
+  await settle(page, 300);
+  assert.equal(await shown(), "shown", "after changing its attributes");
+  await page.evaluate(() => document.getElementById("whitelist-warning-bar").hidePopover());
+  await settle(page, 300);
+  assert.equal(await shown(), "shown", "after closing it as a popover");
+
+  // Closing it again and again: it stays visible even outside the top layer
+  await page.evaluate(() => {
+    window.hideLoop = true;
+    const hide = () => {
+      const bar = document.getElementById("whitelist-warning-bar");
+      try {
+        bar.hidePopover();
+      } catch (e) {
+        // Already closed
+      }
+      if (window.hideLoop) requestAnimationFrame(hide);
+    };
+    hide();
+  });
+  for (let i = 0; i < 5; i++) {
+    await settle(page, 200);
+    assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED, "during a hide loop");
+  }
+  await page.evaluate(() => {
+    window.hideLoop = false;
+  });
+  await settle(page, 1200);
+  assert.equal(await shown(), "shown", "after the hide loop");
+
+  // Replacing the page content
+  await page.evaluate(() => {
+    document.body = document.createElement("body");
+  });
+  assert.equal(await shown(), "shown", "after replacing the body");
+
+  // Covering it with something in the browser's top layer
+  for (const cover of ["dialog", "popover"]) {
+    await page.evaluate((kind) => {
+      const element = document.createElement(kind === "dialog" ? "dialog" : "div");
+      element.id = "cover";
+      element.style.cssText =
+        "position: fixed; inset: 0; width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; border: 0; background: rgb(0, 0, 255); pointer-events: none";
+      document.body.appendChild(element);
+      if (kind === "dialog") {
+        element.showModal();
+      } else {
+        element.popover = "manual";
+        element.showPopover();
+      }
+    }, cover);
+    await settle(page, 1500);
+    assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED, `bar stays on top of a ${cover}`);
+    assert.deepEqual(await pixelAt(page, 300, 300), [0, 0, 255], "the cover itself is shown");
+    await page.evaluate(() => document.getElementById("cover").remove());
+  }
+
+  // The toolbar icon repeats the warning where the page cannot reach it
+  assert.equal(await badgeText("http://hide-bar.test/*"), "!");
+  await app.evaluate(() => addToUserWhitelist("hide-bar.test"));
+  await page.locator(BAR).waitFor({ state: "detached" });
+  assert.equal(await badgeText("http://hide-bar.test/*"), "");
+  await resetWhitelist();
+});
+
+test("a page without an address of its own gets the warning bar", async () => {
+  await resetWhitelist();
+  await gotoAndContinue(page, "blob-opener.test", "/blob");
+  const [opened] = await Promise.all([
+    app.context.waitForEvent("page"),
+    page.frameLocator("#box").locator("#open").click(),
+  ]);
+  await opened.waitForLoadState("domcontentloaded");
+  assert.match(opened.url(), /^blob:null\//);
+  await opened.locator(BAR).waitFor();
+  assert.match(await barText(opened), /content without an address of its own/);
+  assert.doesNotMatch(await barText(opened), /extension icon/);
+  await opened.close();
+
+  // An empty tab the user opened is no web content
+  const blank = await app.newPage();
+  await blank.goto("about:blank");
+  await settle(blank);
+  assert.equal(await blank.locator(BAR).count(), 0);
+  await blank.close();
 });

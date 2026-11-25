@@ -3,6 +3,7 @@
 // system allows it) an organization policy for the extension.
 const fs = require("fs");
 const http = require("http");
+const zlib = require("zlib");
 const os = require("os");
 const path = require("path");
 const { chromium } = require("playwright");
@@ -79,6 +80,45 @@ function startServer() {
     }
 
     response.setHeader("content-type", "text/html; charset=utf-8");
+    if (request.url.startsWith("/guard")) {
+      // Login fields in every place a page can put them. With "?swallow"
+      // the page also tries to keep input events to itself.
+      const swallow = request.url.includes("swallow")
+        ? `<script>for (const type of ["input", "change"]) {
+             window.addEventListener(type, (event) => event.stopImmediatePropagation(), true);
+           }</script>`
+        : "";
+      response.end(
+        `<!doctype html><title>Guard</title>${swallow}<body style="margin:120px 60px">
+         <input id="plain" type="email"><br>
+         <input id="odd" type="username"><br>
+         <div id="editable" contenteditable="true" style="border:1px solid;min-height:20px;width:300px"></div>
+         <div id="shadow-host"></div>
+         <iframe id="srcdoc" srcdoc="<input id='f'>"></iframe>
+         <iframe id="sandboxed" sandbox="allow-scripts" srcdoc="<input id='f'>"></iframe>
+         <iframe id="data" src="data:text/html,<input id='f'>"></iframe>
+         <iframe id="same" src="/login"></iframe>
+         <iframe id="cross" src="http://other-shop.test/login"></iframe>
+         <iframe id="trusted" src="http://firma.sharepoint.com/login"></iframe>
+         <script>
+           const root = document.getElementById("shadow-host").attachShadow({ mode: "closed" });
+           root.innerHTML = '<input id="inner" style="width:300px">';
+           window.innerField = root.getElementById("inner");
+         </script></body>`,
+      );
+      return;
+    }
+    if (request.url.startsWith("/blob")) {
+      // A sandboxed frame whose button opens a page without an address of
+      // its own (blob:null/...)
+      const blob = "<title>Blob</title><h1>Sign in</h1><input id=user type=email>";
+      const inner = `<button id='open' onclick="window.open(window.URL.createObjectURL(new Blob(['${blob}'], { type: 'text/html' })))">open</button>`;
+      response.end(
+        `<!doctype html><title>Blob</title><body>
+         <iframe id="box" sandbox="allow-scripts allow-popups" srcdoc="${inner.replace(/"/g, "&quot;")}"></iframe></body>`,
+      );
+      return;
+    }
     if (request.url.startsWith("/login")) {
       response.end(
         `<!doctype html><title>Sign in</title><body style="margin:120px 60px">
@@ -250,6 +290,22 @@ function settle(page, ms = 1200) {
 
 const BAR = "#whitelist-warning-bar";
 
+// Colour of one pixel of the page as the user sees it, as [red, green, blue].
+// Unlike a DOM query this shows which element is really on top.
+async function pixelAt(page, x, y) {
+  const png = await page.screenshot({ clip: { x, y, width: 1, height: 1 } });
+  let data = Buffer.alloc(0);
+  for (let offset = 8; offset < png.length; ) {
+    const length = png.readUInt32BE(offset);
+    if (png.toString("latin1", offset + 4, offset + 8) === "IDAT") {
+      data = Buffer.concat([data, png.subarray(offset + 8, offset + 8 + length)]);
+    }
+    offset += length + 12;
+  }
+  // One row: a filter byte, then the pixel
+  return [...zlib.inflateSync(data).subarray(1, 4)];
+}
+
 // Text of the warning bar, which lives in the bar's shadow root
 function barText(page) {
   return page.locator(`${BAR} .bar`).innerText();
@@ -264,6 +320,7 @@ module.exports = {
   gotoAndContinue,
   gotoBlocked,
   launch,
+  pixelAt,
   policySupported,
   settle,
 };

@@ -84,3 +84,34 @@ test("getRootDomain returns the registrable domain", () => {
   assert.equal(ext.getRootDomain("192.168.1.1"), null);
   assert.equal(ext.getRootDomain("localhost"), null);
 });
+
+test("accented lookalikes are compared by their plain reading", () => {
+  const trusted = ["*.microsoft.com", "login.microsoftonline.com", "*.xn--mller-kva.de"];
+  const cases = {
+    "secure.microsoftonlíne.com": "microsoftonline.com", // other host of an exactly listed domain
+    "microsoftonlíne.com": "microsoftonline.com",
+    "microsöft.net": "microsoft.com", // same name, other ending
+    "micrösoft-login.com": "microsoft.com",
+  };
+  for (const [domain, expected] of Object.entries(cases)) {
+    assert.equal(ext.findSuspicion(toAscii(domain), trusted), expected, domain);
+    assert.equal(ext.findSimilarWhitelisted(toAscii(domain), trusted), expected, domain);
+  }
+  // A whitelisted accented domain and unrelated ones stay unsuspicious
+  for (const domain of ["www.müller.de", "bücher.de", "café-zürich.ch"]) {
+    assert.equal(ext.findSuspicion(toAscii(domain), trusted), null, domain);
+  }
+});
+
+test("without the public suffix list, endings like co.uk are still no domain", () => {
+  const firefox = loadExtension();
+  delete firefox.chrome.publicSuffix;
+  assert.equal(firefox.getRootDomain("www.shop.co.uk"), "shop.co.uk");
+  assert.equal(firefox.getRootDomain("co.uk"), null);
+  assert.equal(firefox.getRootDomain("mail.web.de"), "web.de");
+  assert.equal(firefox.getRootDomain("a.b.example.com"), "example.com");
+  assert.equal(firefox.isSuffixWildcard("*.co.uk"), true);
+  assert.equal(firefox.isSuffixWildcard("*.com.au"), true);
+  assert.equal(firefox.isSuffixWildcard("*.barclays.co.uk"), false);
+  assert.equal(firefox.findSimilarWhitelisted("barc1ays.co.uk", ["barclays.co.uk"]), "barclays.co.uk");
+});

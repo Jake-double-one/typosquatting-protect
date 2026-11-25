@@ -5,6 +5,9 @@
   "barBefore": {
     "message": "⚠️ Non-whitelisted domain: "
   },
+  "unknownContent": {
+    "message": "content without an address of its own"
+  },
   "barAfter": {
     "message": " could be insecure"
   },

@@ -5,6 +5,9 @@
   "barBefore": {
     "message": "⚠️ Unbekannte Webseite: "
   },
+  "unknownContent": {
+    "message": "Inhalt ohne eigene Adresse"
+  },
   "barAfter": {
     "message": " könnte unsicher sein"
   },

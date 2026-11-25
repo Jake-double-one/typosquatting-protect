@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Domain Whitelist Protector",
-  "version": "3.5.2",
+  "version": "3.6",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "permissions": ["storage", "tabs", "webNavigation"],
@@ -24,7 +24,9 @@
       "matches": ["<all_urls>"],
       "js": ["common.js", "content.js"],
       "css": ["styles.css"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true
     }
   ],
   "background": {

@@ -179,3 +179,75 @@ test("the interface follows the browser language", { skip: false }, async () => 
   const popup = await app.openPopup();
   assert.equal((await popup.locator('[data-tab="country"]').innerText()).trim(), "Länder");
 });
+
+test("the sign-in guard sees fields in frames, unusual fields and swallowed events", { skip }, async () => {
+  const page = await relaunch({
+    policy: { managedWhitelist: ["*.sharepoint.com"], protectedEmailDomains: ["firma.de"] },
+  });
+  const address = "max@firma.de";
+  const outlined = (locator) => locator.evaluate((field) => field.style.outline !== "");
+
+  for (const [host, path] of [["unknown-shop.net", "/guard"], ["second-shop.net", "/guard?swallow"]]) {
+    await gotoAndContinue(page, host, path);
+
+    await page.locator("#plain").fill(address);
+    await page.locator("#whitelist-login-warning").waitFor();
+    assert.ok(await outlined(page.locator("#plain")), `${path}: ordinary field`);
+
+    await page.locator("#odd").fill(address);
+    await settle(page, 300);
+    assert.ok(await outlined(page.locator("#odd")), `${path}: unknown field type`);
+
+    await page.locator("#editable").click();
+    await page.keyboard.type(address);
+    await settle(page, 300);
+    assert.ok(await outlined(page.locator("#editable")), `${path}: editable region`);
+
+    await page.evaluate(() => window.innerField.focus());
+    await page.keyboard.type(address);
+    await settle(page, 300);
+    assert.ok(
+      await page.evaluate(() => window.innerField.style.outline !== ""),
+      `${path}: field in a closed shadow root`,
+    );
+
+    for (const frame of ["srcdoc", "sandboxed", "data", "same", "cross"]) {
+      const field = page.frameLocator(`#${frame}`).locator("input").first();
+      await field.fill(address);
+      await settle(page, 500);
+      assert.ok(await outlined(field), `${path}: field in the ${frame} frame`);
+    }
+
+    // A frame showing a whitelisted website is left alone
+    const trusted = page.frameLocator("#trusted").locator("#user");
+    await trusted.fill(address);
+    await settle(page, 500);
+    assert.equal(await outlined(trusted), false, `${path}: whitelisted frame`);
+  }
+
+  // The page cannot take the warning away while the field holds the address
+  await page.locator("#plain").fill(address);
+  await page.locator("#whitelist-login-warning").waitFor();
+  await page.evaluate(() => document.getElementById("whitelist-login-warning").remove());
+  await page.addStyleTag({ content: "html > #whitelist-login-warning { display: none !important; }" });
+  assert.ok(await page.locator("#whitelist-login-warning").isVisible());
+
+  // Only the top document shows the bar
+  assert.equal(await page.locator(BAR).count(), 1);
+  assert.equal(await page.frameLocator("#cross").locator(BAR).count(), 0);
+});
+
+test("the sign-in guard works on a page without an address of its own", { skip }, async () => {
+  const page = await relaunch({
+    policy: { managedWhitelist: ["*.sharepoint.com"], protectedEmailDomains: ["firma.de"] },
+  });
+  await gotoAndContinue(page, "blob-opener.test", "/blob");
+  const [opened] = await Promise.all([
+    app.context.waitForEvent("page"),
+    page.frameLocator("#box").locator("#open").click(),
+  ]);
+  await opened.locator(BAR).waitFor();
+  await opened.locator("#user").fill("max@firma.de");
+  await opened.locator("#whitelist-login-warning").waitFor();
+  assert.ok(await marked(opened, "#user"));
+});

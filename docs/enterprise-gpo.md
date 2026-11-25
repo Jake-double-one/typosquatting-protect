@@ -469,6 +469,18 @@ Die rote Warnleiste auf der Seite bietet bewusst keine Freigabe an. Sie liegt
 im Inhalt der besuchten Seite, und eine Webseite könnte sonst sich selbst
 freigeben. Freigeben geht nur in den Seiten der Erweiterung selbst.
 
+Weil die Leiste im Inhalt der besuchten Seite liegt, kann eine Seite versuchen,
+sie zu entfernen, auszublenden oder zu überdecken. Die Erweiterung setzt die
+Leiste und die Warnung bei Anmeldung dann wieder ein und hält sie über allem,
+was die Seite anzeigt. Zusätzlich trägt das Symbol der Erweiterung in der
+Symbolleiste ein rotes **!**, solange die Leiste für eine Seite gilt. Dieses
+Zeichen kann keine Webseite beeinflussen.
+
+Die Warnung bei Anmeldung gilt auch für Anmeldefelder in eingebetteten Rahmen
+(iframes) einer Seite. Inhalte ohne eigene Adresse, die eine Seite in einem
+neuen Tab öffnet (`blob:`), gelten als nicht freigegeben und zeigen Leiste und
+Warnung ebenfalls.
+
 Domains, die nach einer Fälschung aussehen (Zeichen aus anderen Alphabeten,
 Ähnlichkeit zu einer Domain der Whitelist), lassen sich auf der
 Bestätigungsseite und im Kasten „Aktuelle Seite“ nicht freigeben. Über das

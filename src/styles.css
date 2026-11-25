@@ -1,3 +1,6 @@
+/* The hosts also carry these rules as inline styles, which the content
+   script restores when a page changes them (content.js). */
+
 /* Host of the warning bar; its content lives in a shadow root (content.js) */
 #whitelist-warning-bar {
   all: initial !important;
@@ -14,6 +17,6 @@
 #whitelist-login-warning {
   all: initial !important;
   display: block !important;
-  position: absolute !important;
+  position: fixed !important;
   z-index: 2147483647 !important;
 }
