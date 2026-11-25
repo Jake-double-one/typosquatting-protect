@@ -328,7 +328,7 @@ test("importing a file asks before adding a lookalike", async () => {
     mimeType: "application/json",
     buffer: Buffer.from(JSON.stringify({ whitelist: ["sharepoimt.com", "partner.example"], countryBlock: [] })),
   });
-  await popup.locator("#whitelist li", { hasText: "partner.example" }).waitFor();
+  await popup.locator("#whitelist li", { hasText: "partner.example" }).waitFor({ state: "attached" });
   const entries = await app.evaluate(() => getUserWhitelist());
   assert.ok(entries.includes("partner.example"));
   assert.ok(!entries.includes("sharepoimt.com"));
@@ -340,9 +340,11 @@ test("the popup normalizes input, asks before adding a lookalike and cleans up",
   await resetWhitelist(["*.sharepoint.com", "a.example.com", "*.example.com", "keep.de"]);
   const popup = await app.openPopup();
   assert.ok(await popup.locator("#managed-section").isHidden());
+  assert.ok(await popup.locator("#whitelist").isHidden());
 
   await popup.fill("#new-domain", "https://Kunde.Beispiel.org/sites/x");
   await popup.click("#add-domain");
+  // Adding an entry opens the collapsed list and shows it
   await popup.locator("#whitelist li", { hasText: "kunde.beispiel.org" }).waitFor();
 
   // Lookalike: declined, then confirmed
@@ -506,7 +508,7 @@ test("a page without an address of its own gets the warning bar", async () => {
   await blank.close();
 });
 
-test("the popup offers a search once the own whitelist needs a scrollbar", async () => {
+test("the own whitelist starts collapsed and offers a search once it needs a scrollbar", async () => {
   await resetWhitelist();
   const popup = await app.openPopup();
   const rows = () => popup.locator("#whitelist li:not(.empty-list)").count();
@@ -515,6 +517,13 @@ test("the popup offers a search once the own whitelist needs a scrollbar", async
       await setUserWhitelist(Array.from({ length: n }, (_, i) => `site-${i}.example`));
       await loadWhitelist();
     }, count);
+
+  // The list starts collapsed and shows only its size
+  await fill(40);
+  assert.equal(await popup.locator("#whitelist").isVisible(), false);
+  assert.match(await popup.textContent("#whitelist-toggle"), /\(40\)/);
+  await popup.click("#whitelist-toggle");
+  await popup.locator("#whitelist").waitFor();
 
   await fill(3);
   assert.equal(await popup.locator("#whitelist-search").isVisible(), false);

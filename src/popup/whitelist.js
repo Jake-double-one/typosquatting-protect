@@ -76,9 +76,18 @@ async function loadWhitelist() {
   showUserList();
 }
 
-// The user's own entries. The search field appears once the full list no
-// longer fits and needs a scrollbar.
+// The user's own entries. The list starts collapsed, so the popup stays
+// small however long it gets. The search field appears once the open list
+// no longer fits and needs a scrollbar.
 let userDomains = [];
+
+function toggleUserList() {
+  const toggle = document.getElementById("whitelist-toggle");
+  const body = document.getElementById("whitelist-body");
+  body.hidden = !body.hidden;
+  toggle.setAttribute("aria-expanded", String(!body.hidden));
+  showUserList();
+}
 
 function showUserList() {
   const list = document.getElementById("whitelist");
@@ -86,6 +95,8 @@ function showUserList() {
   const render = (domains, emptyText) =>
     renderDomainList(list, domains, { emptyText, onRemove: removeDomain });
 
+  document.getElementById("whitelist-count").textContent =
+    `(${userDomains.length})`;
   render(userDomains, t("emptyWhitelist"));
   if (list.clientHeight > 0) {
     // Measured only while the list is visible; a hidden tab has no height
@@ -142,8 +153,12 @@ async function addDomain() {
   if (!input.value.trim()) {
     return;
   }
-  await addEntry(input.value);
+  const added = await addEntry(input.value);
   input.value = "";
+  // Show the new entry: open the list if it is still collapsed
+  if (added && document.getElementById("whitelist-body").hidden) {
+    toggleUserList();
+  }
 }
 
 // Box at the top of the popup: the website in the current tab and whether

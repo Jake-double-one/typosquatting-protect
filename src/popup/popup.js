@@ -21,6 +21,18 @@ document.addEventListener("DOMContentLoaded", function () {
       cleanUpRedundantEntries();
     });
 
+  // Open and close the user's own whitelist
+  const whitelistToggle = document.getElementById("whitelist-toggle");
+  whitelistToggle.addEventListener("click", function () {
+    toggleUserList();
+  });
+  whitelistToggle.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleUserList();
+    }
+  });
+
   // Search in the user's own whitelist
   document
     .getElementById("whitelist-search")

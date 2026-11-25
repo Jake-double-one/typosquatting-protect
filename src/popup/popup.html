@@ -60,6 +60,18 @@
         border: 1px solid #ddd;
         border-radius: 4px;
       }
+      .list-toggle {
+        cursor: pointer;
+        user-select: none;
+      }
+      .list-toggle::before {
+        content: "\25B8";
+        display: inline-block;
+        width: 1em;
+      }
+      .list-toggle[aria-expanded="true"]::before {
+        content: "\25BE";
+      }
       #whitelist-search {
         box-sizing: border-box;
         width: 100%;
@@ -481,13 +493,24 @@
           />
           <button id="add-domain" data-i18n="add">Add</button>
         </div>
-        <h3 class="section-title" data-i18n="userHeading">Your whitelist</h3>
+        <h3
+          class="section-title list-toggle"
+          id="whitelist-toggle"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-controls="whitelist-body"
+        >
+          <span data-i18n="userHeading">Your whitelist</span>
+          <span id="whitelist-count"></span>
+        </h3>
         <div class="redundant-note" id="redundant-note" hidden>
           <span id="redundant-text"></span>
           <button id="redundant-clean" data-i18n="redundantClean">
             Clean up
           </button>
         </div>
+        <div id="whitelist-body" hidden>
         <input
           type="search"
           id="whitelist-search"
@@ -496,6 +519,7 @@
           hidden
         />
         <ul id="whitelist"></ul>
+        </div>
       </div>
 
       <h3 class="section-title" id="options-heading" data-i18n="optionsHeading">Options</h3>
