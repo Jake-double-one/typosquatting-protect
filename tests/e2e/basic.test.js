@@ -505,3 +505,40 @@ test("a page without an address of its own gets the warning bar", async () => {
   assert.equal(await blank.locator(BAR).count(), 0);
   await blank.close();
 });
+
+test("the popup offers a search once the own whitelist needs a scrollbar", async () => {
+  await resetWhitelist();
+  const popup = await app.openPopup();
+  const rows = () => popup.locator("#whitelist li:not(.empty-list)").count();
+  const fill = (count) =>
+    popup.evaluate(async (n) => {
+      await setUserWhitelist(Array.from({ length: n }, (_, i) => `site-${i}.example`));
+      await loadWhitelist();
+    }, count);
+
+  await fill(3);
+  assert.equal(await popup.locator("#whitelist-search").isVisible(), false);
+
+  await fill(40);
+  await popup.locator("#whitelist-search").waitFor();
+  await popup.fill("#whitelist-search", "SITE-3");
+  assert.equal(await rows(), 11);
+
+  // Removing an entry keeps the search and its filter
+  await popup.locator("#whitelist li", { hasText: "site-39.example" }).locator(".remove-btn").click();
+  await popup.locator("#whitelist li", { hasText: "site-39.example" }).waitFor({ state: "detached" });
+  assert.equal(await rows(), 10);
+  assert.equal(await popup.inputValue("#whitelist-search"), "SITE-3");
+
+  await popup.fill("#whitelist-search", "nothing-like-this");
+  assert.match(await popup.textContent("#whitelist .empty-list"), /No matches/);
+  await popup.fill("#whitelist-search", "");
+  assert.equal(await rows(), 39);
+
+  // Back to a short list: the search goes away again
+  await fill(3);
+  assert.equal(await popup.locator("#whitelist-search").isVisible(), false);
+  assert.equal(await rows(), 3);
+  await popup.close();
+  await resetWhitelist();
+});

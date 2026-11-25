@@ -119,6 +119,12 @@
   "emptyWhitelist": {
     "message": "No domains in whitelist"
   },
+  "searchPlaceholder": {
+    "message": "Search your whitelist"
+  },
+  "searchNoMatch": {
+    "message": "No matches"
+  },
   "remove": {
     "message": "Remove"
   },

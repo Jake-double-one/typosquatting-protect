@@ -21,6 +21,13 @@ document.addEventListener("DOMContentLoaded", function () {
       cleanUpRedundantEntries();
     });
 
+  // Search in the user's own whitelist
+  document
+    .getElementById("whitelist-search")
+    .addEventListener("input", function () {
+      showUserList();
+    });
+
   // Current website and its whitelisting options
   loadCurrentPage();
 
@@ -118,6 +125,9 @@ document.addEventListener("DOMContentLoaded", function () {
       // Add active class to clicked tab and corresponding content
       tab.classList.add("active");
       document.getElementById(tab.dataset.tab).classList.add("active");
+      if (tab.dataset.tab === "domains") {
+        showUserList();
+      }
     });
   });
 });

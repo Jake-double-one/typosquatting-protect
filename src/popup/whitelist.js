@@ -72,10 +72,36 @@ async function loadWhitelist() {
     String(redundant.length),
   ]);
 
-  renderDomainList(document.getElementById("whitelist"), settings.userWhitelist, {
-    emptyText: t("emptyWhitelist"),
-    onRemove: removeDomain,
-  });
+  userDomains = settings.userWhitelist;
+  showUserList();
+}
+
+// The user's own entries. The search field appears once the full list no
+// longer fits and needs a scrollbar.
+let userDomains = [];
+
+function showUserList() {
+  const list = document.getElementById("whitelist");
+  const search = document.getElementById("whitelist-search");
+  const render = (domains, emptyText) =>
+    renderDomainList(list, domains, { emptyText, onRemove: removeDomain });
+
+  render(userDomains, t("emptyWhitelist"));
+  if (list.clientHeight > 0) {
+    // Measured only while the list is visible; a hidden tab has no height
+    search.hidden = list.scrollHeight <= list.clientHeight;
+  }
+  if (search.hidden) {
+    search.value = "";
+    return;
+  }
+  const query = search.value.trim().toLowerCase();
+  if (query) {
+    render(
+      userDomains.filter((domain) => domain.toLowerCase().includes(query)),
+      t("searchNoMatch"),
+    );
+  }
 }
 
 async function addEntry(input) {
