@@ -544,6 +544,13 @@ test("the own whitelist starts collapsed and offers a search once it needs a scr
   await popup.fill("#whitelist-search", "");
   assert.equal(await rows(), 39);
 
+  // A new entry is shown even if the search would hide it
+  await popup.fill("#whitelist-search", "site-1");
+  await popup.fill("#new-domain", "fresh.example");
+  await popup.click("#add-domain");
+  await popup.locator("#whitelist li", { hasText: "fresh.example" }).waitFor();
+  assert.equal(await popup.inputValue("#whitelist-search"), "");
+
   // Back to a short list: the search goes away again
   await fill(3);
   assert.equal(await popup.locator("#whitelist-search").isVisible(), false);

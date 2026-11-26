@@ -21,6 +21,7 @@ can be rolled out and configured centrally through Group Policy.
 - Exact domains and wildcards (`*.example.com`)
 - Allow a domain permanently or only for the current browser session
 - Whitelist the current website from the popup with one click (exact domain or `*.domain`)
+- Your own whitelist is collapsed in the popup and shows the number of entries; a search field appears once the open list needs a scrollbar
 - Clean-up hint for entries that other entries already cover
 - Import and export
 

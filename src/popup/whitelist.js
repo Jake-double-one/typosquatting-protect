@@ -155,9 +155,16 @@ async function addDomain() {
   }
   const added = await addEntry(input.value);
   input.value = "";
-  // Show the new entry: open the list if it is still collapsed
-  if (added && document.getElementById("whitelist-body").hidden) {
+  if (!added) {
+    return;
+  }
+  // Show the new entry: drop a search filter that could hide it and open
+  // the list if it is still collapsed
+  document.getElementById("whitelist-search").value = "";
+  if (document.getElementById("whitelist-body").hidden) {
     toggleUserList();
+  } else {
+    showUserList();
   }
 }
 
