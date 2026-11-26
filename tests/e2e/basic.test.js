@@ -374,6 +374,7 @@ test("the popup normalizes input, asks before adding a lookalike and cleans up",
   await popup.close();
 });
 
+// Sampled in the left padding of the bar, where no text can sit whatever the font
 const BAR_RED = [255, 82, 82];
 const badgeText = (target) =>
   app.evaluate(async (url) => {
@@ -397,7 +398,7 @@ test("a page cannot remove, hide or cover the warning bar", async () => {
       return bar.matches(":popover-open") ? "shown" : "not in the top layer";
     });
   assert.equal(await shown(), "shown");
-  assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED);
+  assert.deepEqual(await pixelAt(page, 5, 8), BAR_RED);
 
   // Removing the element, or moving it somewhere hidden
   await page.evaluate(() => document.getElementById("whitelist-warning-bar").remove());
@@ -443,7 +444,7 @@ test("a page cannot remove, hide or cover the warning bar", async () => {
   });
   for (let i = 0; i < 5; i++) {
     await settle(page, 200);
-    assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED, "during a hide loop");
+    assert.deepEqual(await pixelAt(page, 5, 8), BAR_RED, "during a hide loop");
   }
   await page.evaluate(() => {
     window.hideLoop = false;
@@ -473,7 +474,7 @@ test("a page cannot remove, hide or cover the warning bar", async () => {
       }
     }, cover);
     await settle(page, 1500);
-    assert.deepEqual(await pixelAt(page, 300, 8), BAR_RED, `bar stays on top of a ${cover}`);
+    assert.deepEqual(await pixelAt(page, 5, 8), BAR_RED, `bar stays on top of a ${cover}`);
     assert.deepEqual(await pixelAt(page, 300, 300), [0, 0, 255], "the cover itself is shown");
     await page.evaluate(() => document.getElementById("cover").remove());
   }
